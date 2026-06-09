@@ -40,9 +40,14 @@ def init_db() -> None:
             """
             CREATE TABLE IF NOT EXISTS test_cases (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
+                test_id TEXT NOT NULL DEFAULT '',
+                feature TEXT NOT NULL DEFAULT '',
+                sub_feature TEXT NOT NULL DEFAULT '',
                 title TEXT NOT NULL,
+                priority TEXT NOT NULL DEFAULT 'Medium',
                 steps TEXT NOT NULL DEFAULT '',
                 expected_result TEXT NOT NULL DEFAULT '',
+                test_data TEXT NOT NULL DEFAULT '',
                 created_at TEXT NOT NULL
             );
 
@@ -103,14 +108,20 @@ app.add_middleware(
 
 
 class TestCaseCreate(BaseModel):
+    test_id: str = ""
+    feature: str = ""
+    sub_feature: str = ""
     title: str = Field(..., min_length=1)
+    priority: str = "Medium"
     steps: str = ""
     expected_result: str = ""
+    test_data: str = ""
 
 
 class ExecutionCreate(BaseModel):
     name: str = Field(..., min_length=1)
     description: str = ""
+    test_case_ids: list[int] = []
 
 
 class AddCasesRequest(BaseModel):
@@ -133,10 +144,30 @@ def create_test_case(payload: TestCaseCreate):
     with get_db() as conn:
         cursor = conn.execute(
             """
-            INSERT INTO test_cases (title, steps, expected_result, created_at)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO test_cases (
+                test_id,
+                feature,
+                sub_feature,
+                title,
+                priority,
+                steps,
+                expected_result,
+                test_data,
+                created_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
-            (payload.title, payload.steps, payload.expected_result, created_at),
+            (
+                payload.test_id,
+                payload.feature,
+                payload.sub_feature,
+                payload.title,
+                payload.priority,
+                payload.steps,
+                payload.expected_result,
+                payload.test_data,
+                created_at,
+            ),
         )
         test_case = conn.execute(
             "SELECT * FROM test_cases WHERE id = ?", (cursor.lastrowid,)
@@ -153,10 +184,33 @@ def list_test_cases():
     return [row_to_dict(row) for row in rows]
 
 
+@app.delete("/test-cases/{test_case_id}")
+def delete_test_case(test_case_id: int):
+    with get_db() as conn:
+        test_case = conn.execute(
+            "SELECT id FROM test_cases WHERE id = ?", (test_case_id,)
+        ).fetchone()
+        if not test_case:
+            raise HTTPException(status_code=404, detail="Test case not found")
+
+        conn.execute("DELETE FROM test_cases WHERE id = ?", (test_case_id,))
+
+    return {"message": "Test case deleted", "id": test_case_id}
+
+
 @app.post("/executions", status_code=201)
 def create_execution(payload: ExecutionCreate):
     created_at = now_iso()
     with get_db() as conn:
+        test_case_ids = list(dict.fromkeys(payload.test_case_ids))
+        if test_case_ids:
+            missing_ids = find_missing_test_case_ids(conn, test_case_ids)
+            if missing_ids:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Test case IDs not found: {missing_ids}",
+                )
+
         cursor = conn.execute(
             """
             INSERT INTO executions (name, description, created_at)
@@ -164,10 +218,25 @@ def create_execution(payload: ExecutionCreate):
             """,
             (payload.name, payload.description, created_at),
         )
+        execution_id = cursor.lastrowid
+
+        for test_case_id in test_case_ids:
+            conn.execute(
+                """
+                INSERT INTO execution_items
+                    (execution_id, test_case_id, status, actual_result, created_at, updated_at)
+                VALUES (?, ?, 'NOT_RUN', '', ?, ?)
+                """,
+                (execution_id, test_case_id, created_at, created_at),
+            )
+
         execution = conn.execute(
-            "SELECT * FROM executions WHERE id = ?", (cursor.lastrowid,)
+            "SELECT * FROM executions WHERE id = ?", (execution_id,)
         ).fetchone()
-    return row_to_dict(execution)
+
+    data = row_to_dict(execution)
+    data["added_count"] = len(test_case_ids)
+    return data
 
 
 @app.get("/executions")
@@ -215,9 +284,14 @@ def get_execution_detail(execution_id: int):
                 i.actual_result,
                 i.created_at,
                 i.updated_at,
+                tc.test_id,
+                tc.feature,
+                tc.sub_feature,
                 tc.title,
+                tc.priority,
                 tc.steps,
-                tc.expected_result
+                tc.expected_result,
+                tc.test_data
             FROM execution_items i
             JOIN test_cases tc ON tc.id = i.test_case_id
             WHERE i.execution_id = ?
@@ -240,6 +314,20 @@ def get_execution_detail(execution_id: int):
     }
 
 
+@app.delete("/executions/{execution_id}")
+def delete_execution(execution_id: int):
+    with get_db() as conn:
+        execution = conn.execute(
+            "SELECT id FROM executions WHERE id = ?", (execution_id,)
+        ).fetchone()
+        if not execution:
+            raise HTTPException(status_code=404, detail="Execution not found")
+
+        conn.execute("DELETE FROM executions WHERE id = ?", (execution_id,))
+
+    return {"message": "Execution deleted", "id": execution_id}
+
+
 @app.post("/executions/{execution_id}/test-cases", status_code=201)
 def add_test_cases_to_execution(execution_id: int, payload: AddCasesRequest):
     timestamp = now_iso()
@@ -250,13 +338,7 @@ def add_test_cases_to_execution(execution_id: int, payload: AddCasesRequest):
         if not execution:
             raise HTTPException(status_code=404, detail="Execution not found")
 
-        placeholders = ",".join("?" for _ in payload.test_case_ids)
-        found_cases = conn.execute(
-            f"SELECT id FROM test_cases WHERE id IN ({placeholders})",
-            payload.test_case_ids,
-        ).fetchall()
-        found_ids = {row["id"] for row in found_cases}
-        missing_ids = sorted(set(payload.test_case_ids) - found_ids)
+        missing_ids = find_missing_test_case_ids(conn, payload.test_case_ids)
         if missing_ids:
             raise HTTPException(
                 status_code=404,
@@ -276,6 +358,20 @@ def add_test_cases_to_execution(execution_id: int, payload: AddCasesRequest):
             added_count += cursor.rowcount
 
     return {"added_count": added_count}
+
+
+def find_missing_test_case_ids(conn: sqlite3.Connection, test_case_ids: list[int]) -> list[int]:
+    """Return IDs that were requested but do not exist in the test_cases table."""
+    if not test_case_ids:
+        return []
+
+    placeholders = ",".join("?" for _ in test_case_ids)
+    found_cases = conn.execute(
+        f"SELECT id FROM test_cases WHERE id IN ({placeholders})",
+        test_case_ids,
+    ).fetchall()
+    found_ids = {row["id"] for row in found_cases}
+    return sorted(set(test_case_ids) - found_ids)
 
 
 @app.patch("/execution-items/{item_id}")

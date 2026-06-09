@@ -22,9 +22,34 @@
       <section class="panel">
         <h2>Create Test Case</h2>
         <form id="caseForm">
+          <div class="formGrid">
+            <label>
+              Test ID
+              <input id="caseTestId" placeholder="TC-PWR-001" />
+            </label>
+            <label>
+              Priority
+              <select id="casePriority">
+                <option value="Critical">Critical</option>
+                <option value="High">High</option>
+                <option value="Medium" selected>Medium</option>
+                <option value="Low">Low</option>
+              </select>
+            </label>
+          </div>
+          <div class="formGrid">
+            <label>
+              Feature
+              <input id="caseFeature" placeholder="Power" />
+            </label>
+            <label>
+              Sub Feature
+              <input id="caseSubFeature" placeholder="Power Button" />
+            </label>
+          </div>
           <label>
             Title
-            <input id="caseTitle" required placeholder="Login accepts valid user" />
+            <input id="caseTitle" required placeholder="Verify Power On/Off Function" />
           </label>
           <label>
             Steps
@@ -32,7 +57,11 @@
           </label>
           <label>
             Expected Result
-            <textarea id="caseExpected" placeholder="User lands on the dashboard"></textarea>
+            <textarea id="caseExpected" placeholder="Device powers on/off successfully"></textarea>
+          </label>
+          <label>
+            Test Data
+            <textarea id="caseTestData" placeholder="N/A or DHCP, Static"></textarea>
           </label>
           <button type="submit">Create Case</button>
         </form>
@@ -49,6 +78,15 @@
             Description
             <textarea id="executionDescription" placeholder="Smoke tests for the new release"></textarea>
           </label>
+          <label>
+            Search Test Cases
+            <input id="executionCaseSearch" placeholder="Filter by test case title" />
+          </label>
+          <div class="formSectionHeader">
+            <strong>Test Cases</strong>
+            <span id="selectedCaseCount" class="muted">0 selected</span>
+          </div>
+          <div id="executionCaseChecklist" class="checklist"></div>
           <button type="submit">Create Execution</button>
         </form>
       </section>
@@ -69,7 +107,7 @@
         <div id="executionList" class="list"></div>
       </section>
 
-      <section class="panel full">
+      <section id="executionDetailPanel" class="panel full">
         <div class="sectionHeader">
           <h2>Execution Detail</h2>
           <span id="selectedExecutionLabel" class="muted">Select an execution</span>

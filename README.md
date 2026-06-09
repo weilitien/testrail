@@ -5,12 +5,25 @@ A beginner-friendly full-stack TestRail-like app using FastAPI, SQLite, and plai
 ## Features
 
 - Create and list test cases
-- Create test executions
+- Delete test cases
+- Create test executions by selecting test cases
+- Delete test executions
 - Add selected test cases into an execution
 - Update result status: `NOT_RUN`, `PASS`, `FAIL`, `BLOCKED`, `SKIPPED`
 - Add actual result notes
 - View execution history
 - View execution detail and pass rate
+
+Test cases include:
+
+- Test ID
+- Feature
+- Sub Feature
+- Title
+- Priority
+- Steps
+- Expected Result
+- Test Data
 
 ## Project Structure
 
@@ -47,7 +60,7 @@ Open `frontend/index.html` in your browser, or serve it with:
 
 ```bash
 cd frontend
-python -m http.server 5173
+python3 -m http.server 5173
 ```
 
 Then open `http://localhost:5173`.
@@ -83,9 +96,38 @@ const API_BASE = "https://your-api.up.railway.app";
 
 - `GET /test-cases`
 - `POST /test-cases`
+- `DELETE /test-cases/{test_case_id}`
 - `GET /executions`
 - `POST /executions`
 - `GET /executions/{execution_id}`
+- `DELETE /executions/{execution_id}`
 - `POST /executions/{execution_id}/test-cases`
 - `PATCH /execution-items/{item_id}`
 - `GET /executions/{execution_id}/history`
+
+Create an execution with selected test cases:
+
+```json
+{
+  "name": "Regression Run",
+  "description": "Release verification",
+  "test_case_ids": [1, 2, 3]
+}
+```
+
+The backend creates the execution and its related execution items in one request. Each new item starts with `NOT_RUN`.
+
+Create a test case:
+
+```json
+{
+  "test_id": "TC-PWR-001",
+  "feature": "Power",
+  "sub_feature": "Power Button",
+  "title": "Verify Power On/Off Function",
+  "priority": "Critical",
+  "steps": "Press the power button",
+  "expected_result": "Device powers on/off successfully",
+  "test_data": "N/A"
+}
+```

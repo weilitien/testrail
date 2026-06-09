@@ -7,6 +7,7 @@ const STATUSES = ["NOT_RUN", "PASS", "FAIL", "BLOCKED", "SKIPPED"];
 let testCases = [];
 let executions = [];
 let selectedExecutionId = null;
+let selectedExecutionCaseIds = new Set();
 
 const elements = {
   caseForm: document.querySelector("#caseForm"),
@@ -15,11 +16,15 @@ const elements = {
   executionList: document.querySelector("#executionList"),
   caseCount: document.querySelector("#caseCount"),
   executionCount: document.querySelector("#executionCount"),
+  executionCaseSearch: document.querySelector("#executionCaseSearch"),
+  executionCaseChecklist: document.querySelector("#executionCaseChecklist"),
+  selectedCaseCount: document.querySelector("#selectedCaseCount"),
   caseSelect: document.querySelector("#caseSelect"),
   addCasesButton: document.querySelector("#addCasesButton"),
   executionSummary: document.querySelector("#executionSummary"),
   executionItems: document.querySelector("#executionItems"),
   historyList: document.querySelector("#historyList"),
+  detailPanel: document.querySelector("#executionDetailPanel"),
   selectedExecutionLabel: document.querySelector("#selectedExecutionLabel"),
   refreshButton: document.querySelector("#refreshButton"),
   toast: document.querySelector("#toast"),
@@ -58,22 +63,99 @@ function renderTestCases() {
     : "<p class='muted'>No test cases yet.</p>";
 
   elements.caseSelect.innerHTML = testCases
-    .map((testCase) => `<option value="${testCase.id}">#${testCase.id} ${testCase.title}</option>`)
+    .map(
+      (testCase) =>
+        `<option value="${testCase.id}">${formatTestCaseLabel(testCase)}</option>`
+    )
     .join("");
+  renderExecutionCaseChecklist();
 
   for (const testCase of testCases) {
     const row = document.createElement("article");
     row.className = "listRow";
     row.innerHTML = `
       <div class="listRowHeader">
-        <h3>#${testCase.id} ${escapeHtml(testCase.title)}</h3>
-        <span class="muted">${formatDate(testCase.created_at)}</span>
+        <div>
+          <h3>${formatTestCaseLabel(testCase)}</h3>
+          <div class="metaLine">
+            <span>${escapeHtml(testCase.feature || "No feature")}</span>
+            <span>${escapeHtml(testCase.sub_feature || "No sub feature")}</span>
+            <span class="priority ${escapeHtml(testCase.priority || "Medium")}">
+              ${escapeHtml(testCase.priority || "Medium")}
+            </span>
+          </div>
+        </div>
+        <div class="rowActions">
+          <span class="muted">${formatDate(testCase.created_at)}</span>
+          <button class="danger" type="button">Delete</button>
+        </div>
       </div>
       <p><strong>Steps:</strong> ${escapeHtml(testCase.steps || "No steps")}</p>
       <p><strong>Expected:</strong> ${escapeHtml(testCase.expected_result || "No expected result")}</p>
+      <p><strong>Test Data:</strong> ${escapeHtml(testCase.test_data || "N/A")}</p>
     `;
+    row.querySelector("button").addEventListener("click", () => deleteTestCase(testCase));
     elements.caseList.appendChild(row);
   }
+}
+
+function renderExecutionCaseChecklist() {
+  const searchText = elements.executionCaseSearch.value.trim().toLowerCase();
+  const filteredCases = testCases.filter((testCase) =>
+    testCase.title.toLowerCase().includes(searchText)
+  );
+
+  elements.executionCaseChecklist.innerHTML = filteredCases.length
+    ? ""
+    : "<p class='muted'>No matching test cases.</p>";
+
+  for (const testCase of filteredCases) {
+    const label = document.createElement("label");
+    label.className = "checkboxRow";
+    label.innerHTML = `
+      <input
+        type="checkbox"
+        name="executionCase"
+        value="${testCase.id}"
+        ${selectedExecutionCaseIds.has(testCase.id) ? "checked" : ""}
+      />
+      <span>
+        <strong>${formatTestCaseLabel(testCase)}</strong>
+        <small>
+          ${escapeHtml(testCase.feature || "No feature")} /
+          ${escapeHtml(testCase.sub_feature || "No sub feature")} /
+          ${escapeHtml(testCase.priority || "Medium")}
+        </small>
+      </span>
+    `;
+    label.querySelector("input").addEventListener("change", (event) => {
+      const testCaseId = Number(event.currentTarget.value);
+      if (event.currentTarget.checked) {
+        selectedExecutionCaseIds.add(testCaseId);
+      } else {
+        selectedExecutionCaseIds.delete(testCaseId);
+      }
+      updateSelectedCaseCount();
+    });
+    elements.executionCaseChecklist.appendChild(label);
+  }
+
+  updateSelectedCaseCount();
+}
+
+function getSelectedExecutionCaseIds() {
+  return Array.from(selectedExecutionCaseIds);
+}
+
+function updateSelectedCaseCount() {
+  const selectedCount = getSelectedExecutionCaseIds().length;
+  elements.selectedCaseCount.textContent = `${selectedCount} selected`;
+}
+
+function formatTestCaseLabel(testCase) {
+  const fallbackId = testCase.id || testCase.test_case_id;
+  const visibleId = testCase.test_id || `Case #${fallbackId}`;
+  return `${escapeHtml(visibleId)} - ${escapeHtml(testCase.title)}`;
 }
 
 function renderExecutions() {
@@ -88,14 +170,30 @@ function renderExecutions() {
     row.innerHTML = `
       <div class="listRowHeader">
         <h3>#${execution.id} ${escapeHtml(execution.name)}</h3>
-        <button class="secondary" type="button">View Detail</button>
+        <div class="rowActions">
+          <button class="secondary" type="button" data-action="view">View Detail</button>
+          <button class="danger" type="button" data-action="delete">Delete</button>
+        </div>
       </div>
       <p>${escapeHtml(execution.description || "No description")}</p>
       <p>${execution.total_cases} case(s), ${execution.pass_rate}% pass rate</p>
     `;
-    row.querySelector("button").addEventListener("click", () => selectExecution(execution.id));
+    row.querySelector("[data-action='view']").addEventListener("click", () =>
+      selectExecution(execution.id)
+    );
+    row.querySelector("[data-action='delete']").addEventListener("click", () =>
+      deleteExecution(execution)
+    );
     elements.executionList.appendChild(row);
   }
+}
+
+function clearExecutionDetail() {
+  selectedExecutionId = null;
+  elements.selectedExecutionLabel.textContent = "Select an execution";
+  elements.executionSummary.innerHTML = "";
+  elements.executionItems.innerHTML = "";
+  elements.historyList.innerHTML = "";
 }
 
 function renderExecutionDetail(detail) {
@@ -129,9 +227,17 @@ function renderExecutionDetail(detail) {
     row.className = "executionItem";
     row.innerHTML = `
       <div>
-        <h3>#${item.test_case_id} ${escapeHtml(item.title)}</h3>
+        <h3>${formatTestCaseLabel(item)}</h3>
+        <div class="metaLine">
+          <span>${escapeHtml(item.feature || "No feature")}</span>
+          <span>${escapeHtml(item.sub_feature || "No sub feature")}</span>
+          <span class="priority ${escapeHtml(item.priority || "Medium")}">
+            ${escapeHtml(item.priority || "Medium")}
+          </span>
+        </div>
         <p><strong>Steps:</strong> ${escapeHtml(item.steps || "No steps")}</p>
         <p><strong>Expected:</strong> ${escapeHtml(item.expected_result || "No expected result")}</p>
+        <p><strong>Test Data:</strong> ${escapeHtml(item.test_data || "N/A")}</p>
         <span class="status ${item.status}">${item.status}</span>
       </div>
       <form class="itemEditor">
@@ -221,7 +327,12 @@ async function loadInitialData() {
   renderExecutions();
 
   if (selectedExecutionId) {
-    await selectExecution(selectedExecutionId);
+    const selectedStillExists = executions.some((execution) => execution.id === selectedExecutionId);
+    if (selectedStillExists) {
+      await selectExecution(selectedExecutionId);
+    } else {
+      clearExecutionDetail();
+    }
   }
 }
 
@@ -242,6 +353,36 @@ async function updateExecutionItem(itemId, payload) {
   await loadInitialData();
 }
 
+async function deleteTestCase(testCase) {
+  const confirmed = window.confirm(
+    `Delete test case #${testCase.id} "${testCase.title}"? This also removes it from executions.`
+  );
+  if (!confirmed) {
+    return;
+  }
+
+  selectedExecutionCaseIds.delete(testCase.id);
+  await api(`/test-cases/${testCase.id}`, { method: "DELETE" });
+  showToast("Test case deleted");
+  await loadInitialData();
+}
+
+async function deleteExecution(execution) {
+  const confirmed = window.confirm(
+    `Delete execution #${execution.id} "${execution.name}"? This also removes its results and history.`
+  );
+  if (!confirmed) {
+    return;
+  }
+
+  await api(`/executions/${execution.id}`, { method: "DELETE" });
+  if (selectedExecutionId === execution.id) {
+    clearExecutionDetail();
+  }
+  showToast("Execution deleted");
+  await loadInitialData();
+}
+
 function escapeHtml(value) {
   return String(value)
     .replaceAll("&", "&amp;")
@@ -256,9 +397,14 @@ elements.caseForm.addEventListener("submit", async (event) => {
   await api("/test-cases", {
     method: "POST",
     body: JSON.stringify({
+      test_id: document.querySelector("#caseTestId").value,
+      feature: document.querySelector("#caseFeature").value,
+      sub_feature: document.querySelector("#caseSubFeature").value,
       title: document.querySelector("#caseTitle").value,
+      priority: document.querySelector("#casePriority").value,
       steps: document.querySelector("#caseSteps").value,
       expected_result: document.querySelector("#caseExpected").value,
+      test_data: document.querySelector("#caseTestData").value,
     }),
   });
   elements.caseForm.reset();
@@ -268,17 +414,27 @@ elements.caseForm.addEventListener("submit", async (event) => {
 
 elements.executionForm.addEventListener("submit", async (event) => {
   event.preventDefault();
+  const selectedCaseIds = getSelectedExecutionCaseIds();
+
+  if (!selectedCaseIds.length) {
+    showToast("Select at least one test case");
+    return;
+  }
+
   const execution = await api("/executions", {
     method: "POST",
     body: JSON.stringify({
       name: document.querySelector("#executionName").value,
       description: document.querySelector("#executionDescription").value,
+      test_case_ids: selectedCaseIds,
     }),
   });
   elements.executionForm.reset();
+  selectedExecutionCaseIds = new Set();
   showToast("Execution created");
   await loadInitialData();
   await selectExecution(execution.id);
+  elements.detailPanel.scrollIntoView({ behavior: "smooth", block: "start" });
 });
 
 elements.addCasesButton.addEventListener("click", async () => {
@@ -304,6 +460,7 @@ elements.addCasesButton.addEventListener("click", async () => {
 });
 
 elements.refreshButton.addEventListener("click", loadInitialData);
+elements.executionCaseSearch.addEventListener("input", renderExecutionCaseChecklist);
 
 loadInitialData().catch((error) => {
   showToast(error.message);

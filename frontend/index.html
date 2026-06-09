@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mini TestRail</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <img class="brandIcon" src="assets/app-icon.jpg" alt="Mini TestRail icon" />
+        <div>
+          <h1>Mini TestRail</h1>
+          <p>Manage test cases, executions, results, and history.</p>
+        </div>
+      </div>
+      <button id="refreshButton" type="button">Refresh</button>
+    </header>
+
+    <main class="layout">
+      <section class="panel">
+        <h2>Create Test Case</h2>
+        <form id="caseForm">
+          <label>
+            Title
+            <input id="caseTitle" required placeholder="Login accepts valid user" />
+          </label>
+          <label>
+            Steps
+            <textarea id="caseSteps" placeholder="1. Open login page&#10;2. Enter valid credentials"></textarea>
+          </label>
+          <label>
+            Expected Result
+            <textarea id="caseExpected" placeholder="User lands on the dashboard"></textarea>
+          </label>
+          <button type="submit">Create Case</button>
+        </form>
+      </section>
+
+      <section class="panel">
+        <h2>Create Execution</h2>
+        <form id="executionForm">
+          <label>
+            Name
+            <input id="executionName" required placeholder="Regression Run 2026-06-09" />
+          </label>
+          <label>
+            Description
+            <textarea id="executionDescription" placeholder="Smoke tests for the new release"></textarea>
+          </label>
+          <button type="submit">Create Execution</button>
+        </form>
+      </section>
+
+      <section class="panel wide">
+        <div class="sectionHeader">
+          <h2>Test Cases</h2>
+          <span id="caseCount" class="muted"></span>
+        </div>
+        <div id="caseList" class="list"></div>
+      </section>
+
+      <section class="panel wide">
+        <div class="sectionHeader">
+          <h2>Executions</h2>
+          <span id="executionCount" class="muted"></span>
+        </div>
+        <div id="executionList" class="list"></div>
+      </section>
+
+      <section class="panel full">
+        <div class="sectionHeader">
+          <h2>Execution Detail</h2>
+          <span id="selectedExecutionLabel" class="muted">Select an execution</span>
+        </div>
+
+        <div class="addCasesBar">
+          <select id="caseSelect" multiple></select>
+          <button id="addCasesButton" type="button">Add Selected Cases</button>
+        </div>
+
+        <div id="executionSummary" class="summaryGrid"></div>
+        <div id="executionItems" class="items"></div>
+      </section>
+
+      <section class="panel full">
+        <h2>Execution History</h2>
+        <div id="historyList" class="history"></div>
+      </section>
+    </main>
+
+    <div id="toast" class="toast" hidden></div>
+    <script src="app.js"></script>
+  </body>
+</html>

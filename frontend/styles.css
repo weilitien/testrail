@@ -1,0 +1,364 @@
+:root {
+  --bg: #f7f8fb;
+  --panel: #ffffff;
+  --text: #1f2937;
+  --muted: #687385;
+  --line: #d9dee8;
+  --accent: #2563eb;
+  --accent-dark: #1d4ed8;
+  --pass: #16803c;
+  --fail: #b42318;
+  --blocked: #9a6700;
+  --skipped: #5b6472;
+  --not-run: #526070;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 24px clamp(16px, 4vw, 48px);
+  background: #ffffff;
+  border-bottom: 1px solid var(--line);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.brandIcon {
+  width: 128px;
+  height: 128px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  object-fit: cover;
+  flex: 0 0 128px;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin-top: 0;
+}
+
+h1 {
+  margin-bottom: 4px;
+  font-size: 28px;
+}
+
+h2 {
+  margin-bottom: 16px;
+  font-size: 18px;
+}
+
+.topbar p,
+.muted {
+  color: var(--muted);
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  padding: 24px clamp(16px, 4vw, 48px);
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 18px;
+}
+
+.wide,
+.full {
+  grid-column: span 2;
+}
+
+form,
+.itemEditor {
+  display: grid;
+  gap: 12px;
+}
+
+label {
+  display: grid;
+  gap: 6px;
+  color: #374151;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+input,
+textarea,
+select {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 10px 12px;
+  color: var(--text);
+  font: inherit;
+  background: #ffffff;
+}
+
+textarea {
+  min-height: 84px;
+  resize: vertical;
+}
+
+select[multiple] {
+  min-height: 112px;
+}
+
+button {
+  border: 0;
+  border-radius: 6px;
+  padding: 10px 14px;
+  background: var(--accent);
+  color: #ffffff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+button:hover {
+  background: var(--accent-dark);
+}
+
+button.secondary {
+  background: #eef2ff;
+  color: #1e3a8a;
+}
+
+button.secondary:hover {
+  background: #dbe4ff;
+}
+
+.sectionHeader,
+.addCasesBar,
+.listRowHeader,
+.summaryGrid {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.list,
+.items,
+.history {
+  display: grid;
+  gap: 12px;
+}
+
+.listRow,
+.executionItem,
+.historyRow,
+.summaryBox {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px;
+  background: #ffffff;
+}
+
+.listRow h3,
+.executionItem h3 {
+  margin-bottom: 6px;
+  font-size: 16px;
+}
+
+.listRow p,
+.executionItem p,
+.historyRow p {
+  margin-bottom: 8px;
+  color: var(--muted);
+  white-space: pre-wrap;
+}
+
+.addCasesBar {
+  align-items: stretch;
+  margin-bottom: 16px;
+}
+
+.addCasesBar select {
+  flex: 1;
+}
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: 16px;
+}
+
+.chartPanel {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: 160px 1fr;
+  gap: 18px;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 16px;
+  background: #ffffff;
+}
+
+.passRateDonut {
+  display: grid;
+  place-items: center;
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at center, #ffffff 0 57%, transparent 58%),
+    conic-gradient(var(--pass) var(--pass-rate), #e6e9ef 0);
+}
+
+.passRateDonut span {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.statusChart {
+  display: grid;
+  gap: 10px;
+}
+
+.statusBarRow {
+  display: grid;
+  gap: 6px;
+}
+
+.statusBarMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.statusBarTrack {
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e6e9ef;
+}
+
+.statusBarFill {
+  height: 100%;
+  border-radius: inherit;
+}
+
+.statusBarFill.NOT_RUN {
+  background: var(--not-run);
+}
+
+.statusBarFill.PASS {
+  background: var(--pass);
+}
+
+.statusBarFill.FAIL {
+  background: var(--fail);
+}
+
+.statusBarFill.BLOCKED {
+  background: var(--blocked);
+}
+
+.statusBarFill.SKIPPED {
+  background: var(--skipped);
+}
+
+.summaryBox strong {
+  display: block;
+  margin-top: 6px;
+  font-size: 24px;
+}
+
+.executionItem {
+  display: grid;
+  grid-template-columns: 1fr minmax(260px, 380px);
+  gap: 18px;
+}
+
+.status {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 4px 9px;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.status.NOT_RUN {
+  background: var(--not-run);
+}
+
+.status.PASS {
+  background: var(--pass);
+}
+
+.status.FAIL {
+  background: var(--fail);
+}
+
+.status.BLOCKED {
+  background: var(--blocked);
+}
+
+.status.SKIPPED {
+  background: var(--skipped);
+}
+
+.toast {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  max-width: 360px;
+  border-radius: 8px;
+  padding: 12px 14px;
+  background: #111827;
+  color: #ffffff;
+  box-shadow: 0 10px 24px rgb(0 0 0 / 18%);
+}
+
+@media (max-width: 780px) {
+  .topbar,
+  .sectionHeader,
+  .addCasesBar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .brand {
+    align-items: flex-start;
+  }
+
+  .layout,
+  .summaryGrid,
+  .chartPanel,
+  .executionItem {
+    grid-template-columns: 1fr;
+  }
+
+  .wide,
+  .full {
+    grid-column: span 1;
+  }
+}

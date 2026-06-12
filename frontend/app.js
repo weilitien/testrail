@@ -6,6 +6,7 @@ const STATUSES = ["NOT_RUN", "PASS", "FAIL", "BLOCKED", "SKIPPED"];
 
 let testCases = [];
 let executions = [];
+let categories = [];
 let selectedExecutionId = null;
 let selectedExecutionItemId = null;
 let selectedExecutionCaseIds = new Set();
@@ -13,6 +14,7 @@ let selectedCaseId = null;
 let selectedCaseGroup = { type: "all", category: "" };
 let editingTestCaseId = null;
 let currentExecutionDetail = null;
+let collapsedExecutionCategories = new Set();
 
 const elements = {
   caseForm: document.querySelector("#caseForm"),
@@ -21,6 +23,10 @@ const elements = {
   caseSubmitButton: document.querySelector("#caseSubmitButton"),
   cancelCaseEditButton: document.querySelector("#cancelCaseEditButton"),
   createCaseButton: document.querySelector("#createCaseButton"),
+  addStepButton: document.querySelector("#addStepButton"),
+  caseStepRows: document.querySelector("#caseStepRows"),
+  categoryForm: document.querySelector("#categoryForm"),
+  categoryName: document.querySelector("#categoryName"),
   categoryTree: document.querySelector("#categoryTree"),
   caseDetailEmpty: document.querySelector("#caseDetailEmpty"),
   caseDetailContent: document.querySelector("#caseDetailContent"),
@@ -40,6 +46,7 @@ const elements = {
   casePriorityFilter: document.querySelector("#casePriorityFilter"),
   clearCaseFiltersButton: document.querySelector("#clearCaseFiltersButton"),
   caseCsvFile: document.querySelector("#caseCsvFile"),
+  downloadCsvTemplateButton: document.querySelector("#downloadCsvTemplateButton"),
   importCsvButton: document.querySelector("#importCsvButton"),
   executionList: document.querySelector("#executionList"),
   executionSearch: document.querySelector("#executionSearch"),
@@ -118,6 +125,7 @@ function renderTestCases() {
   }
 
   renderCategoryTree();
+  renderCategoryOptions();
   renderCaseDetail();
 
   if (elements.caseSelect) {
@@ -166,15 +174,11 @@ function renderCategoryTree() {
     return;
   }
 
-  const groups = new Map();
-  for (const testCase of testCases) {
-    const category = testCase.category || "No category";
-    groups.set(category, (groups.get(category) || 0) + 1);
-  }
+  const uncategorizedCount = testCases.filter((testCase) => !testCase.category).length;
 
   elements.categoryTree.innerHTML = "";
   elements.categoryTree.appendChild(
-    createCategoryTreeButton({
+    createCategoryTreeRow({
       label: "All Test Cases",
       count: testCases.length,
       active: selectedCaseGroup.type === "all",
@@ -185,31 +189,99 @@ function renderCategoryTree() {
     })
   );
 
-  for (const [category, count] of Array.from(groups.entries()).sort()) {
+  if (uncategorizedCount) {
     elements.categoryTree.appendChild(
-      createCategoryTreeButton({
-        label: category,
-        count,
-        active: selectedCaseGroup.type === "category" && selectedCaseGroup.category === category,
+      createCategoryTreeRow({
+        label: "Uncategorized",
+        count: uncategorizedCount,
+        active: selectedCaseGroup.type === "category" && selectedCaseGroup.category === "",
         onClick: () => {
-          selectedCaseGroup = { type: "category", category };
+          selectedCaseGroup = { type: "category", category: "" };
           renderTestCases();
         },
       })
     );
   }
+
+  for (const category of categories) {
+    elements.categoryTree.appendChild(
+      createCategoryTreeRow({
+        label: category.name,
+        count: category.test_count,
+        active:
+          selectedCaseGroup.type === "category" &&
+          selectedCaseGroup.category === category.name,
+        onClick: () => {
+          selectedCaseGroup = { type: "category", category: category.name };
+          renderTestCases();
+        },
+        onRename: () => renameCategory(category),
+        onDelete: () => deleteCategory(category),
+      })
+    );
+  }
 }
 
-function createCategoryTreeButton({ label, count, active, level = 0, onClick }) {
+function createCategoryTreeRow({ label, count, active, onClick, onRename, onDelete }) {
+  const row = document.createElement("div");
+  row.className = `categoryRow ${active ? "active" : ""}`;
+
   const button = document.createElement("button");
-  button.className = `treeItem level${level} ${active ? "active" : ""}`;
+  button.className = "treeItem";
   button.type = "button";
   button.innerHTML = `
     <span>${escapeHtml(label)}</span>
     <strong>${count}</strong>
   `;
   button.addEventListener("click", onClick);
-  return button;
+  row.appendChild(button);
+
+  if (onRename && onDelete) {
+    const actions = document.createElement("div");
+    actions.className = "categoryActions";
+
+    const renameButton = document.createElement("button");
+    renameButton.className = "iconButton";
+    renameButton.type = "button";
+    renameButton.textContent = "Rename";
+    renameButton.addEventListener("click", () => {
+      onRename().catch((error) => showToast(error.message));
+    });
+
+    const deleteButton = document.createElement("button");
+    deleteButton.className = "iconButton dangerText";
+    deleteButton.type = "button";
+    deleteButton.textContent = "Delete";
+    deleteButton.addEventListener("click", () => {
+      onDelete().catch((error) => showToast(error.message));
+    });
+
+    actions.append(renameButton, deleteButton);
+    row.appendChild(actions);
+  }
+
+  return row;
+}
+
+function renderCategoryOptions() {
+  const categorySelect = document.querySelector("#caseCategory");
+  if (!categorySelect) {
+    return;
+  }
+
+  const currentValue = categorySelect.value;
+  categorySelect.innerHTML = `
+    <option value="">Uncategorized</option>
+    ${categories
+      .map(
+        (category) =>
+          `<option value="${escapeHtml(category.name)}">${escapeHtml(category.name)}</option>`
+      )
+      .join("")}
+  `;
+  categorySelect.value = categories.some((category) => category.name === currentValue)
+    ? currentValue
+    : "";
 }
 
 function renderCaseDetail() {
@@ -240,11 +312,7 @@ function renderCaseDetail() {
     </div>
     <div class="detailBlock">
       <strong>Steps</strong>
-      <p>${escapeHtml(selectedCase.steps || "No steps")}</p>
-    </div>
-    <div class="detailBlock">
-      <strong>Expected Result</strong>
-      <p>${escapeHtml(selectedCase.expected_result || "No expected result")}</p>
+      ${renderStepsTable(getDisplaySteps(selectedCase))}
     </div>
     <div class="detailBlock">
       <strong>Test Data</strong>
@@ -257,6 +325,50 @@ function getSelectedTestCase() {
   return testCases.find((testCase) => testCase.id === selectedCaseId);
 }
 
+function getDisplaySteps(testCase) {
+  if (testCase.case_steps?.length) {
+    return testCase.case_steps;
+  }
+
+  if (testCase.steps || testCase.expected_result) {
+    return [
+      {
+        step_text: testCase.steps || "",
+        expected_result: testCase.expected_result || "",
+      },
+    ];
+  }
+
+  return [];
+}
+
+function renderStepsTable(caseSteps) {
+  if (!caseSteps.length) {
+    return "<p>No steps</p>";
+  }
+
+  return `
+    <div class="stepsTable">
+      <div class="stepsTableHeader">
+        <span>#</span>
+        <span>Step</span>
+        <span>Expected Result</span>
+      </div>
+      ${caseSteps
+        .map(
+          (step, index) => `
+            <div class="stepsTableRow">
+              <span>${index + 1}</span>
+              <p>${escapeHtml(step.step_text || "No step")}</p>
+              <p>${escapeHtml(step.expected_result || "No expected result")}</p>
+            </div>
+          `
+        )
+        .join("")}
+    </div>
+  `;
+}
+
 function filterTestCases(cases) {
   const searchText = elements.caseSearch
     ? elements.caseSearch.value.trim().toLowerCase()
@@ -264,7 +376,7 @@ function filterTestCases(cases) {
   const priority = elements.casePriorityFilter ? elements.casePriorityFilter.value : "";
 
   return cases.filter((testCase) => {
-    const category = testCase.category || "No category";
+    const category = testCase.category || "";
     const searchableText = [
       testCase.test_id,
       testCase.title,
@@ -366,13 +478,20 @@ function csvRowsToTestCases(rows) {
       record[header] = row[index] || "";
     });
 
+    const steps = getCsvValue(record, ["steps"]);
+    const expectedResult = getCsvValue(record, ["expected_result", "expected result"]);
+
     return {
       test_id: getCsvValue(record, ["test_id", "test id"]),
       category: getCsvValue(record, ["category"]),
       title: getCsvValue(record, ["title"]),
       priority: getCsvValue(record, ["priority"], "Medium"),
-      steps: getCsvValue(record, ["steps"]),
-      expected_result: getCsvValue(record, ["expected_result", "expected result"]),
+      steps,
+      expected_result: expectedResult,
+      case_steps:
+        steps || expectedResult
+          ? [{ step_text: steps, expected_result: expectedResult }]
+          : [],
       test_data: getCsvValue(record, ["test_data", "test data"]),
     };
   }).filter((testCase) => testCase.title);
@@ -403,6 +522,88 @@ async function importTestCasesFromCsv() {
   } catch (error) {
     showToast(error.message);
   }
+}
+
+function downloadCsvTemplate() {
+  const rows = [
+    ["test_id", "category", "title", "priority", "steps", "expected_result", "test_data"],
+    [
+      "TC-PWR-001",
+      "Hardware",
+      "Verify Power On/Off Function",
+      "Critical",
+      "Press the power button",
+      "Device powers on/off successfully",
+      "N/A",
+    ],
+  ];
+  const csv = rows.map((row) => row.map(escapeCsvValue).join(",")).join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "mini-testrail-test-cases-template.csv";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function escapeCsvValue(value) {
+  const text = String(value);
+  if (/[",\n\r]/.test(text)) {
+    return `"${text.replaceAll('"', '""')}"`;
+  }
+  return text;
+}
+
+async function createCategory(name) {
+  const result = await api("/categories", {
+    method: "POST",
+    body: JSON.stringify({ name }),
+  });
+  selectedCaseGroup = { type: "category", category: result.name };
+  showToast("Category created");
+  await loadInitialData();
+}
+
+async function renameCategory(category) {
+  const newName = window.prompt("Rename category", category.name);
+  if (newName === null) {
+    return;
+  }
+
+  const trimmedName = newName.trim();
+  if (!trimmedName) {
+    showToast("Category name is required");
+    return;
+  }
+
+  const updated = await api(`/categories/${category.id}`, {
+    method: "PUT",
+    body: JSON.stringify({ name: trimmedName }),
+  });
+  if (selectedCaseGroup.type === "category" && selectedCaseGroup.category === category.name) {
+    selectedCaseGroup = { type: "category", category: updated.name };
+  }
+  showToast("Category renamed");
+  await loadInitialData();
+}
+
+async function deleteCategory(category) {
+  const confirmed = window.confirm(
+    `Delete category "${category.name}"? Test cases will become Uncategorized.`
+  );
+  if (!confirmed) {
+    return;
+  }
+
+  await api(`/categories/${category.id}`, { method: "DELETE" });
+  if (selectedCaseGroup.type === "category" && selectedCaseGroup.category === category.name) {
+    selectedCaseGroup = { type: "all", category: "" };
+  }
+  showToast("Category deleted");
+  await loadInitialData();
 }
 
 function renderExecutionCaseChecklist() {
@@ -609,29 +810,84 @@ function renderExecutionDetail(detail) {
       ? "<p class='muted'>No test cases match the current filters.</p>"
       : "<p class='muted'>No test cases have been added to this execution.</p>";
 
-  for (const item of filteredItems) {
-    const row = document.createElement("button");
-    row.className = `executionResultRow ${selectedExecutionItemId === item.id ? "selected" : ""}`;
-    row.type = "button";
-    row.innerHTML = `
-      <span class="caseId">${escapeHtml(item.test_id || "No Test ID")}</span>
-      <span class="caseTitle">${escapeHtml(item.title)}</span>
-      <span class="priority ${escapeHtml(item.priority || "Medium")}">
-        ${escapeHtml(item.priority || "Medium")}
-      </span>
-      <span class="status ${item.status}">${item.status}</span>
+  for (const group of groupExecutionItemsByCategory(filteredItems)) {
+    const groupElement = document.createElement("section");
+    groupElement.className = "executionCategoryGroup";
+    const groupCollapsed = collapsedExecutionCategories.has(group.category);
+    const groupStatusCounts = getStatusCounts(group.items);
+    const passedCount = groupStatusCounts.PASS || 0;
+    const passRate = group.items.length
+      ? Math.round((passedCount / group.items.length) * 100)
+      : 0;
+
+    groupElement.innerHTML = `
+      <button class="executionCategoryHeader" type="button">
+        <span class="categoryToggle">${groupCollapsed ? "+" : "-"}</span>
+        <strong>${escapeHtml(group.label)}</strong>
+        <span>${group.items.length} case(s)</span>
+        <span>${passRate}% pass</span>
+        <span class="statusMiniSummary">
+          ${STATUSES.map(
+            (status) => `<small class="${status}">${status}: ${groupStatusCounts[status]}</small>`
+          ).join("")}
+        </span>
+      </button>
+      <div class="executionCategoryItems" ${groupCollapsed ? "hidden" : ""}></div>
     `;
-    row.addEventListener("click", () => {
-      selectedExecutionItemId = item.id;
+
+    groupElement.querySelector(".executionCategoryHeader").addEventListener("click", () => {
+      if (groupCollapsed) {
+        collapsedExecutionCategories.delete(group.category);
+      } else {
+        collapsedExecutionCategories.add(group.category);
+      }
       renderExecutionDetail(detail);
     });
 
-    elements.executionItems.appendChild(row);
+    const groupItems = groupElement.querySelector(".executionCategoryItems");
+    for (const item of group.items) {
+      groupItems.appendChild(createExecutionResultRow(item, detail));
+    }
+
+    elements.executionItems.appendChild(groupElement);
   }
 
   renderSelectedExecutionItemDetail(
     items.find((item) => item.id === selectedExecutionItemId) || null
   );
+}
+
+function groupExecutionItemsByCategory(items) {
+  const groups = new Map();
+  for (const item of items) {
+    const category = item.category || "";
+    const label = item.category || "Uncategorized";
+    if (!groups.has(category)) {
+      groups.set(category, { category, label, items: [] });
+    }
+    groups.get(category).items.push(item);
+  }
+
+  return Array.from(groups.values()).sort((a, b) => a.label.localeCompare(b.label));
+}
+
+function createExecutionResultRow(item, detail) {
+  const row = document.createElement("button");
+  row.className = `executionResultRow ${selectedExecutionItemId === item.id ? "selected" : ""}`;
+  row.type = "button";
+  row.innerHTML = `
+    <span class="caseId">${escapeHtml(item.test_id || "No Test ID")}</span>
+    <span class="caseTitle">${escapeHtml(item.title)}</span>
+    <span class="priority ${escapeHtml(item.priority || "Medium")}">
+      ${escapeHtml(item.priority || "Medium")}
+    </span>
+    <span class="status ${item.status}">${item.status}</span>
+  `;
+  row.addEventListener("click", () => {
+    selectedExecutionItemId = item.id;
+    renderExecutionDetail(detail);
+  });
+  return row;
 }
 
 function renderSelectedExecutionItemDetail(item) {
@@ -659,11 +915,7 @@ function renderSelectedExecutionItemDetail(item) {
     </div>
     <div class="detailBlock">
       <strong>Steps</strong>
-      <p>${escapeHtml(item.steps || "No steps")}</p>
-    </div>
-    <div class="detailBlock">
-      <strong>Expected Result</strong>
-      <p>${escapeHtml(item.expected_result || "No expected result")}</p>
+      ${renderStepsTable(getDisplaySteps(item))}
     </div>
     <div class="detailBlock">
       <strong>Test Data</strong>
@@ -777,6 +1029,7 @@ function renderHistory(history) {
 }
 
 async function loadInitialData() {
+  categories = await api("/categories");
   testCases = await api("/test-cases");
   renderTestCases();
 
@@ -800,6 +1053,7 @@ async function loadInitialData() {
 async function selectExecution(executionId) {
   if (selectedExecutionId !== executionId) {
     selectedExecutionItemId = null;
+    collapsedExecutionCategories = new Set();
   }
   selectedExecutionId = executionId;
   const detail = await api(`/executions/${executionId}`);
@@ -820,14 +1074,72 @@ async function updateExecutionItem(itemId, payload) {
   await loadInitialData();
 }
 
+function addStepRow(step = {}) {
+  if (!elements.caseStepRows) {
+    return;
+  }
+
+  const row = document.createElement("div");
+  row.className = "stepEditorRow";
+  row.innerHTML = `
+    <label>
+      Step
+      <textarea class="stepTextInput" placeholder="Open login page">${escapeHtml(
+        step.step_text || ""
+      )}</textarea>
+    </label>
+    <label>
+      Expected Result
+      <textarea class="stepExpectedInput" placeholder="Login page is displayed">${escapeHtml(
+        step.expected_result || ""
+      )}</textarea>
+    </label>
+    <button class="iconButton dangerText removeStepButton" type="button">Remove</button>
+  `;
+  row.querySelector(".removeStepButton").addEventListener("click", () => {
+    row.remove();
+    if (!elements.caseStepRows.querySelector(".stepEditorRow")) {
+      addStepRow();
+    }
+  });
+  elements.caseStepRows.appendChild(row);
+}
+
+function renderStepEditor(caseSteps = []) {
+  if (!elements.caseStepRows) {
+    return;
+  }
+
+  elements.caseStepRows.innerHTML = "";
+  const rows = caseSteps.length ? caseSteps : [{}];
+  for (const step of rows) {
+    addStepRow(step);
+  }
+}
+
+function getStepRowsFromForm() {
+  if (!elements.caseStepRows) {
+    return [];
+  }
+
+  return Array.from(elements.caseStepRows.querySelectorAll(".stepEditorRow"))
+    .map((row) => ({
+      step_text: row.querySelector(".stepTextInput").value,
+      expected_result: row.querySelector(".stepExpectedInput").value,
+    }))
+    .filter((step) => step.step_text.trim() || step.expected_result.trim());
+}
+
 function getTestCaseFormPayload() {
+  const caseSteps = getStepRowsFromForm();
   return {
     test_id: document.querySelector("#caseTestId").value,
     category: document.querySelector("#caseCategory").value,
     title: document.querySelector("#caseTitle").value,
     priority: document.querySelector("#casePriority").value,
-    steps: document.querySelector("#caseSteps").value,
-    expected_result: document.querySelector("#caseExpected").value,
+    steps: caseSteps.map((step) => step.step_text).join("\n"),
+    expected_result: caseSteps.map((step) => step.expected_result).join("\n"),
+    case_steps: caseSteps,
     test_data: document.querySelector("#caseTestData").value,
   };
 }
@@ -837,8 +1149,7 @@ function fillTestCaseForm(testCase) {
   document.querySelector("#caseCategory").value = testCase.category || "";
   document.querySelector("#caseTitle").value = testCase.title || "";
   document.querySelector("#casePriority").value = testCase.priority || "Medium";
-  document.querySelector("#caseSteps").value = testCase.steps || "";
-  document.querySelector("#caseExpected").value = testCase.expected_result || "";
+  renderStepEditor(getDisplaySteps(testCase));
   document.querySelector("#caseTestData").value = testCase.test_data || "";
 }
 
@@ -858,6 +1169,7 @@ function hideCaseForm() {
 function startCreatingTestCase() {
   editingTestCaseId = null;
   elements.caseForm.reset();
+  renderStepEditor();
   elements.caseFormTitle.textContent = "Create Test Case";
   elements.caseSubmitButton.textContent = "Create Case";
   showCaseForm();
@@ -875,6 +1187,7 @@ function startEditingTestCase(testCase) {
 function resetTestCaseForm() {
   editingTestCaseId = null;
   elements.caseForm.reset();
+  renderStepEditor();
   elements.caseFormTitle.textContent = "Create Test Case";
   elements.caseSubmitButton.textContent = "Create Case";
   hideCaseForm();
@@ -883,8 +1196,13 @@ function resetTestCaseForm() {
 async function duplicateTestCase(testCase) {
   const duplicated = await api(`/test-cases/${testCase.id}/duplicate`, { method: "POST" });
   selectedCaseId = duplicated.id;
-  showToast("Test case duplicated");
   await loadInitialData();
+  const duplicatedCase = getSelectedTestCase() || duplicated;
+  startEditingTestCase(duplicatedCase);
+  const titleInput = document.querySelector("#caseTitle");
+  titleInput.focus();
+  titleInput.select();
+  showToast("Test case duplicated. Rename it and save.");
 }
 
 async function deleteTestCase(testCase) {
@@ -932,23 +1250,49 @@ function escapeHtml(value) {
 if (elements.caseForm) {
   elements.caseForm.addEventListener("submit", async (event) => {
     event.preventDefault();
-    const payload = getTestCaseFormPayload();
-    const path = editingTestCaseId ? `/test-cases/${editingTestCaseId}` : "/test-cases";
-    const method = editingTestCaseId ? "PUT" : "POST";
+    try {
+      const payload = getTestCaseFormPayload();
+      const path = editingTestCaseId ? `/test-cases/${editingTestCaseId}` : "/test-cases";
+      const method = editingTestCaseId ? "PUT" : "POST";
 
-    const savedCase = await api(path, {
-      method,
-      body: JSON.stringify(payload),
-    });
-    selectedCaseId = savedCase.id;
-    showToast(editingTestCaseId ? "Test case saved" : "Test case created");
-    resetTestCaseForm();
-    await loadInitialData();
+      const savedCase = await api(path, {
+        method,
+        body: JSON.stringify(payload),
+      });
+      selectedCaseId = savedCase.id;
+      showToast(editingTestCaseId ? "Test case saved" : "Test case created");
+      resetTestCaseForm();
+      await loadInitialData();
+    } catch (error) {
+      showToast(error.message);
+    }
+  });
+}
+
+if (elements.categoryForm) {
+  elements.categoryForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const categoryName = elements.categoryName.value.trim();
+    if (!categoryName) {
+      showToast("Category name is required");
+      return;
+    }
+
+    try {
+      await createCategory(categoryName);
+      elements.categoryForm.reset();
+    } catch (error) {
+      showToast(error.message);
+    }
   });
 }
 
 if (elements.createCaseButton) {
   elements.createCaseButton.addEventListener("click", startCreatingTestCase);
+}
+
+if (elements.addStepButton) {
+  elements.addStepButton.addEventListener("click", () => addStepRow());
 }
 
 if (elements.cancelCaseEditButton) {
@@ -1078,6 +1422,9 @@ if (elements.clearCaseFiltersButton) {
 }
 if (elements.importCsvButton) {
   elements.importCsvButton.addEventListener("click", importTestCasesFromCsv);
+}
+if (elements.downloadCsvTemplateButton) {
+  elements.downloadCsvTemplateButton.addEventListener("click", downloadCsvTemplate);
 }
 if (elements.executionCaseSearch) {
   elements.executionCaseSearch.addEventListener("input", renderExecutionCaseChecklist);

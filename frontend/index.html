@@ -28,6 +28,13 @@
           <h2>Categories</h2>
           <span id="caseCount" class="muted"></span>
         </div>
+        <form id="categoryForm" class="categoryForm">
+          <label>
+            New Category
+            <input id="categoryName" placeholder="Hardware" />
+          </label>
+          <button type="submit">Add</button>
+        </form>
         <div id="categoryTree" class="categoryTree"></div>
       </aside>
 
@@ -96,21 +103,22 @@
             <div class="formGrid">
               <label>
                 Category
-                <input id="caseCategory" placeholder="Hardware" />
+                <select id="caseCategory">
+                  <option value="">Uncategorized</option>
+                </select>
               </label>
               <label>
                 Title
                 <input id="caseTitle" required placeholder="Verify Power On/Off Function" />
               </label>
             </div>
-            <label>
-              Steps
-              <textarea id="caseSteps" placeholder="1. Open login page&#10;2. Enter valid credentials"></textarea>
-            </label>
-            <label>
-              Expected Result
-              <textarea id="caseExpected" placeholder="Device powers on/off successfully"></textarea>
-            </label>
+            <div class="stepEditorSection">
+              <div class="formSectionHeader">
+                <h3>Steps</h3>
+                <button id="addStepButton" class="secondary" type="button">Add Step</button>
+              </div>
+              <div id="caseStepRows" class="stepEditorRows"></div>
+            </div>
             <label>
               Test Data
               <textarea id="caseTestData" placeholder="N/A or DHCP, Static"></textarea>
@@ -131,12 +139,18 @@
             CSV File
             <input id="caseCsvFile" type="file" accept=".csv,text/csv" />
           </label>
-          <button id="importCsvButton" class="secondary" type="button">Import CSV</button>
+          <div class="formActions">
+            <button id="downloadCsvTemplateButton" class="secondary" type="button">
+              Download Template
+            </button>
+            <button id="importCsvButton" type="button">Import CSV</button>
+          </div>
         </div>
       </aside>
     </main>
 
     <div id="toast" class="toast" hidden></div>
+    <script src="env.js"></script>
     <script src="app.js"></script>
   </body>
 </html>

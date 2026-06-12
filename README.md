@@ -24,9 +24,10 @@ The app has two main workspaces:
 - Duplicate test cases
 - Delete test cases
 - Import test cases from CSV
+- Create, rename, and delete categories
 - Search test cases by Test ID, title, or category
 - Filter test cases by priority
-- Browse test cases by auto-generated Category tree
+- Browse test cases by managed Category tree
 - View selected test case details in a detail panel
 
 Test cases include:
@@ -35,8 +36,7 @@ Test cases include:
 - Category
 - Title
 - Priority
-- Steps
-- Expected Result
+- Step rows with Step and Expected Result
 - Test Data
 
 ### Executions
@@ -48,6 +48,7 @@ Test cases include:
 - Browse executions from a left-side execution list
 - View execution pass rate and status chart
 - Filter execution results by search, status, and priority
+- Review execution results grouped by category with expandable sections
 - Select one result from `Tests & Results` and edit it in the `Selected Result` panel
 - Update result status: `NOT_RUN`, `PASS`, `FAIL`, `BLOCKED`, `SKIPPED`
 - Add actual result notes
@@ -67,9 +68,9 @@ http://localhost:5173/index.html
 
 Layout:
 
-- Left: Category tree
+- Left: Category tree with add, rename, and delete actions
 - Center: searchable and filterable test case list
-- Right: selected test case detail, create/edit form, and CSV import
+- Right: selected test case detail, create/edit form with category dropdown, and CSV import
 
 ### Executions Page
 
@@ -89,22 +90,117 @@ Layout:
 
 ```text
 backend/
+  Dockerfile
   main.py
   requirements.txt
   Procfile
   railway.json
   runtime.txt
 frontend/
+  Dockerfile
   index.html
   executions.html
   styles.css
   app.js
+  env.js
+  nginx.conf
   netlify.toml
   assets/
     app-icon.jpg
+docker-compose.yml
+.env.example
 ```
 
 ## Run Locally
+
+### Docker Quick Start
+
+Prerequisite:
+
+- Docker Desktop or Docker Engine with Docker Compose v2
+
+Run the full app with one command:
+
+```bash
+docker compose up --build
+```
+
+Then open:
+
+```text
+http://localhost:5173/index.html
+```
+
+Services:
+
+- Frontend: `http://localhost:5173`
+- Backend API: `http://localhost:8000`
+- SQLite data volume: `backend_data`
+
+Check running containers:
+
+```bash
+docker compose ps
+```
+
+Check backend health:
+
+```bash
+curl http://localhost:8000/
+```
+
+Expected response:
+
+```json
+{"message":"Mini TestRail API is running"}
+```
+
+Stop the app:
+
+```bash
+docker compose down
+```
+
+Remove the Docker SQLite volume if you want a clean database:
+
+```bash
+docker compose down -v
+```
+
+Docker Compose waits for the backend healthcheck before starting the frontend container. Both containers also expose health status in `docker compose ps`.
+
+### Docker Troubleshooting
+
+If the frontend shows `ERR_CONNECTION_REFUSED` for `localhost:8000`, check whether the backend is healthy:
+
+```bash
+docker compose ps
+docker compose logs backend
+```
+
+If ports are already in use, stop the process using port `5173` or `8000`, or edit the left side of the port mapping in `docker-compose.yml`.
+
+Example:
+
+```yaml
+ports:
+  - "5174:80"
+```
+
+Then open:
+
+```text
+http://localhost:5174/index.html
+```
+
+If the app starts but old local data looks wrong, reset the Docker SQLite volume:
+
+```bash
+docker compose down -v
+docker compose up --build
+```
+
+### Manual Local Run
 
 ### Backend
 
@@ -168,12 +264,12 @@ Optional environment variables:
 1. Create a Netlify site from this repo.
 2. Set the base directory to `frontend`.
 3. Set the publish directory to `frontend` if Netlify asks from the repo root.
-4. Update `frontend/app.js` so `API_BASE` points to your Railway backend URL.
+4. Update `frontend/env.js` so `API_BASE` points to your Railway backend URL.
 
 Example:
 
 ```js
-const API_BASE = "https://your-api.up.railway.app";
+window.API_BASE = "https://your-api.up.railway.app";
 ```
 
 ## API Endpoints
@@ -191,6 +287,13 @@ const API_BASE = "https://your-api.up.railway.app";
 - `POST /test-cases/{test_case_id}/duplicate`
 - `DELETE /test-cases/{test_case_id}`
 
+### Categories
+
+- `GET /categories`
+- `POST /categories`
+- `PUT /categories/{category_id}`
+- `DELETE /categories/{category_id}`
+
 ### Executions
 
 - `GET /executions`
@@ -203,6 +306,22 @@ const API_BASE = "https://your-api.up.railway.app";
 
 ## API Examples
 
+### Create a Category
+
+```json
+{
+  "name": "Hardware"
+}
+```
+
+Category names must be unique. If a duplicate name is submitted, the API returns:
+
+```json
+{
+  "detail": "Category name already exists"
+}
+```
+
 ### Create a Test Case
 
 ```json
@@ -211,8 +330,12 @@ const API_BASE = "https://your-api.up.railway.app";
   "category": "Hardware",
   "title": "Verify Power On/Off Function",
   "priority": "Critical",
-  "steps": "Press the power button",
-  "expected_result": "Device powers on/off successfully",
+  "case_steps": [
+    {
+      "step_text": "Press the power button",
+      "expected_result": "Device powers on/off successfully"
+    }
+  ],
   "test_data": "N/A"
 }
 ```
@@ -227,8 +350,12 @@ const API_BASE = "https://your-api.up.railway.app";
       "category": "Hardware",
       "title": "Verify Power On/Off Function",
       "priority": "Critical",
-      "steps": "Press the power button",
-      "expected_result": "Device powers on/off successfully",
+      "case_steps": [
+        {
+          "step_text": "Press the power button",
+          "expected_result": "Device powers on/off successfully"
+        }
+      ],
       "test_data": "N/A"
     }
   ]
@@ -245,6 +372,8 @@ TC-PWR-001,Hardware,Verify Power On/Off Function,Critical,Press the power button
 ```
 
 Display-style headers like `Test ID`, `Category`, `Expected Result`, and `Test Data` also work.
+CSV `steps` and `expected_result` values are imported as the first structured step row.
+The Test Cases page also provides a `Download Template` button in the CSV import area.
 
 ### Create an Execution
 
@@ -281,6 +410,7 @@ Every result update is saved into execution history.
 
 - SQLite foreign keys are enabled in the backend.
 - If an older local database still has retired Feature/Sub Feature columns, the backend clears and rebuilds the local SQLite tables on startup.
+- Deleting a category does not delete test cases. Related test cases become Uncategorized.
 - Deleting a test case also removes related execution items and history through cascading deletes.
 - Deleting an execution also removes its results and history.
 - The frontend is intentionally plain HTML/CSS/JavaScript, so no build step is required.

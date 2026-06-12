@@ -33,16 +33,39 @@ def row_to_dict(row: sqlite3.Row) -> dict:
     return dict(row)
 
 
+def reset_legacy_category_schema(conn: sqlite3.Connection) -> None:
+    """Clear old local data when the app finds the retired feature columns."""
+    existing_table = conn.execute(
+        "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'test_cases'"
+    ).fetchone()
+    if not existing_table:
+        return
+
+    columns = conn.execute("PRAGMA table_info(test_cases)").fetchall()
+    column_names = {column["name"] for column in columns}
+    if "feature" not in column_names and "sub_feature" not in column_names:
+        return
+
+    conn.executescript(
+        """
+        DROP TABLE IF EXISTS execution_history;
+        DROP TABLE IF EXISTS execution_items;
+        DROP TABLE IF EXISTS executions;
+        DROP TABLE IF EXISTS test_cases;
+        """
+    )
+
+
 def init_db() -> None:
     """Create tables if this is the first run of the app."""
     with get_db() as conn:
+        reset_legacy_category_schema(conn)
         conn.executescript(
             """
             CREATE TABLE IF NOT EXISTS test_cases (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 test_id TEXT NOT NULL DEFAULT '',
-                feature TEXT NOT NULL DEFAULT '',
-                sub_feature TEXT NOT NULL DEFAULT '',
+                category TEXT NOT NULL DEFAULT '',
                 title TEXT NOT NULL,
                 priority TEXT NOT NULL DEFAULT 'Medium',
                 steps TEXT NOT NULL DEFAULT '',
@@ -109,13 +132,16 @@ app.add_middleware(
 
 class TestCaseCreate(BaseModel):
     test_id: str = ""
-    feature: str = ""
-    sub_feature: str = ""
+    category: str = ""
     title: str = Field(..., min_length=1)
     priority: str = "Medium"
     steps: str = ""
     expected_result: str = ""
     test_data: str = ""
+
+
+class TestCaseBulkCreate(BaseModel):
+    test_cases: list[TestCaseCreate] = Field(..., min_length=1)
 
 
 class ExecutionCreate(BaseModel):
@@ -146,8 +172,7 @@ def create_test_case(payload: TestCaseCreate):
             """
             INSERT INTO test_cases (
                 test_id,
-                feature,
-                sub_feature,
+                category,
                 title,
                 priority,
                 steps,
@@ -155,12 +180,11 @@ def create_test_case(payload: TestCaseCreate):
                 test_data,
                 created_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 payload.test_id,
-                payload.feature,
-                payload.sub_feature,
+                payload.category,
                 payload.title,
                 payload.priority,
                 payload.steps,
@@ -175,6 +199,86 @@ def create_test_case(payload: TestCaseCreate):
     return row_to_dict(test_case)
 
 
+@app.put("/test-cases/{test_case_id}")
+def update_test_case(test_case_id: int, payload: TestCaseCreate):
+    with get_db() as conn:
+        test_case = conn.execute(
+            "SELECT id FROM test_cases WHERE id = ?", (test_case_id,)
+        ).fetchone()
+        if not test_case:
+            raise HTTPException(status_code=404, detail="Test case not found")
+
+        conn.execute(
+            """
+            UPDATE test_cases
+            SET
+                test_id = ?,
+                category = ?,
+                title = ?,
+                priority = ?,
+                steps = ?,
+                expected_result = ?,
+                test_data = ?
+            WHERE id = ?
+            """,
+            (
+                payload.test_id,
+                payload.category,
+                payload.title,
+                payload.priority,
+                payload.steps,
+                payload.expected_result,
+                payload.test_data,
+                test_case_id,
+            ),
+        )
+        updated = conn.execute(
+            "SELECT * FROM test_cases WHERE id = ?", (test_case_id,)
+        ).fetchone()
+
+    return row_to_dict(updated)
+
+
+@app.post("/test-cases/bulk", status_code=201)
+def create_test_cases_bulk(payload: TestCaseBulkCreate):
+    created_at = now_iso()
+    created_cases = []
+
+    with get_db() as conn:
+        for test_case in payload.test_cases:
+            cursor = conn.execute(
+                """
+                INSERT INTO test_cases (
+                    test_id,
+                    category,
+                    title,
+                    priority,
+                    steps,
+                    expected_result,
+                    test_data,
+                    created_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    test_case.test_id,
+                    test_case.category,
+                    test_case.title,
+                    test_case.priority,
+                    test_case.steps,
+                    test_case.expected_result,
+                    test_case.test_data,
+                    created_at,
+                ),
+            )
+            created = conn.execute(
+                "SELECT * FROM test_cases WHERE id = ?", (cursor.lastrowid,)
+            ).fetchone()
+            created_cases.append(row_to_dict(created))
+
+    return {"created_count": len(created_cases), "test_cases": created_cases}
+
+
 @app.get("/test-cases")
 def list_test_cases():
     with get_db() as conn:
@@ -182,6 +286,47 @@ def list_test_cases():
             "SELECT * FROM test_cases ORDER BY id DESC"
         ).fetchall()
     return [row_to_dict(row) for row in rows]
+
+
+@app.post("/test-cases/{test_case_id}/duplicate", status_code=201)
+def duplicate_test_case(test_case_id: int):
+    created_at = now_iso()
+    with get_db() as conn:
+        source = conn.execute(
+            "SELECT * FROM test_cases WHERE id = ?", (test_case_id,)
+        ).fetchone()
+        if not source:
+            raise HTTPException(status_code=404, detail="Test case not found")
+
+        cursor = conn.execute(
+            """
+            INSERT INTO test_cases (
+                test_id,
+                category,
+                title,
+                priority,
+                steps,
+                expected_result,
+                test_data,
+                created_at
+            )
+            VALUES ('', ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                source["category"],
+                f'{source["title"]} (Copy)',
+                source["priority"],
+                source["steps"],
+                source["expected_result"],
+                source["test_data"],
+                created_at,
+            ),
+        )
+        duplicated = conn.execute(
+            "SELECT * FROM test_cases WHERE id = ?", (cursor.lastrowid,)
+        ).fetchone()
+
+    return row_to_dict(duplicated)
 
 
 @app.delete("/test-cases/{test_case_id}")
@@ -201,7 +346,18 @@ def delete_test_case(test_case_id: int):
 @app.post("/executions", status_code=201)
 def create_execution(payload: ExecutionCreate):
     created_at = now_iso()
+    execution_name = payload.name.strip()
     with get_db() as conn:
+        existing_execution = conn.execute(
+            "SELECT id FROM executions WHERE lower(name) = lower(?)",
+            (execution_name,),
+        ).fetchone()
+        if existing_execution:
+            raise HTTPException(
+                status_code=409,
+                detail="Execution name already exists",
+            )
+
         test_case_ids = list(dict.fromkeys(payload.test_case_ids))
         if test_case_ids:
             missing_ids = find_missing_test_case_ids(conn, test_case_ids)
@@ -216,7 +372,7 @@ def create_execution(payload: ExecutionCreate):
             INSERT INTO executions (name, description, created_at)
             VALUES (?, ?, ?)
             """,
-            (payload.name, payload.description, created_at),
+            (execution_name, payload.description, created_at),
         )
         execution_id = cursor.lastrowid
 
@@ -285,8 +441,7 @@ def get_execution_detail(execution_id: int):
                 i.created_at,
                 i.updated_at,
                 tc.test_id,
-                tc.feature,
-                tc.sub_feature,
+                tc.category,
                 tc.title,
                 tc.priority,
                 tc.steps,

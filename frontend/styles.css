@@ -1,16 +1,18 @@
 :root {
-  --bg: #f7f8fb;
+  --bg: #d9edf3;
   --panel: #ffffff;
-  --text: #1f2937;
-  --muted: #687385;
-  --line: #d9dee8;
-  --accent: #2563eb;
-  --accent-dark: #1d4ed8;
-  --pass: #16803c;
-  --fail: #b42318;
-  --blocked: #9a6700;
-  --skipped: #5b6472;
-  --not-run: #526070;
+  --panel-soft: #f8fbfc;
+  --field: #ffffff;
+  --text: #111318;
+  --muted: #5c6670;
+  --line: #d7e1e5;
+  --accent: #ff8f5a;
+  --accent-dark: #f27b43;
+  --pass: #24a148;
+  --fail: #da1e28;
+  --blocked: #f1a000;
+  --skipped: #697077;
+  --not-run: #8d99a6;
 }
 
 * {
@@ -19,7 +21,9 @@
 
 body {
   margin: 0;
-  background: var(--bg);
+  background:
+    radial-gradient(circle at 50% -10%, #94d2de 0, #c6e6ed 42%, #f4f7f7 100%);
+  background-attachment: fixed;
   color: var(--text);
   font-family: Arial, Helvetica, sans-serif;
 }
@@ -28,25 +32,49 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  padding: 24px clamp(16px, 4vw, 48px);
-  background: #ffffff;
+  gap: 12px;
+  padding: 12px clamp(16px, 4vw, 48px);
+  background: rgb(255 255 255 / 76%);
   border-bottom: 1px solid var(--line);
+  box-shadow: 0 10px 28px rgb(17 19 24 / 7%);
+  backdrop-filter: blur(14px);
 }
 
 .brand {
   display: flex;
   align-items: center;
-  gap: 18px;
+  gap: 12px;
 }
 
 .brandIcon {
-  width: 128px;
-  height: 128px;
+  width: 40px;
+  height: 40px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 6px;
   object-fit: cover;
-  flex: 0 0 128px;
+  flex: 0 0 40px;
+}
+
+.topnav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.topnav a {
+  border-radius: 6px;
+  padding: 10px 12px;
+  color: var(--muted);
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.topnav a:hover,
+.topnav a.active {
+  background: #111318;
+  color: #ffffff;
 }
 
 h1,
@@ -57,8 +85,8 @@ p {
 }
 
 h1 {
-  margin-bottom: 4px;
-  font-size: 28px;
+  margin-bottom: 0;
+  font-size: 20px;
 }
 
 h2 {
@@ -71,11 +99,36 @@ h2 {
   color: var(--muted);
 }
 
-.layout {
+.topbar p {
+  display: none;
+}
+
+.caseWorkspace {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
   gap: 18px;
+  align-items: start;
   padding: 24px clamp(16px, 4vw, 48px);
+}
+
+.caseManagementWorkspace {
+  grid-template-columns: 250px minmax(420px, 1fr) minmax(320px, 430px);
+}
+
+.executionPageWorkspace {
+  display: grid;
+  grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+  padding: 24px clamp(16px, 4vw, 48px);
+}
+
+.executionManagementWorkspace {
+  grid-template-columns: 290px minmax(0, 1fr) 360px;
+}
+
+.executionManagementWorkspace.creatorCollapsed {
+  grid-template-columns: 290px minmax(0, 1fr);
 }
 
 .panel {
@@ -83,11 +136,35 @@ h2 {
   border: 1px solid var(--line);
   border-radius: 8px;
   padding: 18px;
+  box-shadow: 0 16px 38px rgb(17 19 24 / 8%);
 }
 
-.wide,
-.full {
-  grid-column: span 2;
+[hidden] {
+  display: none !important;
+}
+
+.caseNavigatorPane,
+.caseDetailPane,
+.executionNavigatorPane {
+  position: sticky;
+  top: 78px;
+}
+
+.executionCreatorPane {
+  position: sticky;
+  top: 78px;
+}
+
+.caseListPane {
+  min-width: 0;
+}
+
+.caseNavigatorPane,
+.caseDetailPane,
+.executionNavigatorPane,
+.executionCreatorPane {
+  max-height: calc(100vh - 102px);
+  overflow: auto;
 }
 
 form,
@@ -105,7 +182,7 @@ form,
 label {
   display: grid;
   gap: 6px;
-  color: #374151;
+  color: #2c333a;
   font-size: 14px;
   font-weight: 700;
 }
@@ -119,7 +196,20 @@ select {
   padding: 10px 12px;
   color: var(--text);
   font: inherit;
-  background: #ffffff;
+  background: var(--field);
+  box-shadow: inset 0 1px 0 rgb(17 19 24 / 3%);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #8a949e;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: 3px solid rgb(255 143 90 / 24%);
+  border-color: var(--accent);
 }
 
 textarea {
@@ -136,7 +226,7 @@ button {
   border-radius: 6px;
   padding: 10px 14px;
   background: var(--accent);
-  color: #ffffff;
+  color: #111318;
   font: inherit;
   font-weight: 700;
   cursor: pointer;
@@ -147,38 +237,37 @@ button:hover {
 }
 
 button.secondary {
-  background: #eef2ff;
-  color: #1e3a8a;
+  background: #111318;
+  color: #ffffff;
 }
 
 button.secondary:hover {
-  background: #dbe4ff;
+  background: #30343a;
 }
 
 button.danger {
-  background: #fee2e2;
-  color: #991b1b;
+  background: #ffe3dd;
+  color: #a12b16;
 }
 
 button.danger:hover {
-  background: #fecaca;
+  background: #ffd2c7;
 }
 
 .sectionHeader,
 .addCasesBar,
-.listRowHeader,
-.summaryGrid {
+.listRowHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
 }
 
-.rowActions {
+.headerActions {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 8px;
+  gap: 10px;
   flex-wrap: wrap;
 }
 
@@ -194,12 +283,21 @@ button.danger:hover {
 .metaLine span {
   border-radius: 999px;
   padding: 3px 8px;
-  background: #eef1f6;
+  background: #eef4f6;
 }
 
 .priority {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  justify-self: start;
+  width: fit-content;
+  min-width: 54px;
+  border-radius: 999px;
+  padding: 4px 10px;
   color: #111827;
   font-weight: 700;
+  line-height: 1;
 }
 
 .priority.Critical {
@@ -225,24 +323,15 @@ button.danger:hover {
   gap: 12px;
 }
 
-.listRow,
-.executionItem,
 .historyRow,
 .summaryBox {
   border: 1px solid var(--line);
   border-radius: 8px;
   padding: 14px;
-  background: #ffffff;
+  background: var(--panel-soft);
+  box-shadow: 0 8px 22px rgb(17 19 24 / 5%);
 }
 
-.listRow h3,
-.executionItem h3 {
-  margin-bottom: 6px;
-  font-size: 16px;
-}
-
-.listRow p,
-.executionItem p,
 .historyRow p {
   margin-bottom: 8px;
   color: var(--muted);
@@ -258,11 +347,373 @@ button.danger:hover {
   flex: 1;
 }
 
+.detailFilters {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) 170px 170px auto;
+  gap: 12px;
+  align-items: end;
+  margin-bottom: 16px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #eef7fa;
+}
+
+.caseToolbar {
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) 180px auto;
+  gap: 12px;
+  align-items: end;
+  margin-bottom: 14px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #eef7fa;
+}
+
+.categoryTree {
+  display: grid;
+  gap: 6px;
+}
+
+.treeItem {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+  padding: 9px 10px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  font-weight: 700;
+}
+
+.treeItem:hover,
+.treeItem.active {
+  border-color: var(--line);
+  background: #eef7fa;
+}
+
+.treeItem strong {
+  min-width: 26px;
+  border-radius: 999px;
+  padding: 2px 7px;
+  background: #ffffff;
+  color: var(--muted);
+  text-align: center;
+  font-size: 12px;
+}
+
+.caseTableRow {
+  display: grid;
+  grid-template-columns: 120px minmax(220px, 1fr) 150px 100px;
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  background: var(--panel-soft);
+  color: var(--text);
+  text-align: left;
+  font-weight: 400;
+  box-shadow: none;
+}
+
+.caseTableRow:hover,
+.caseTableRow.selected {
+  border-color: var(--accent);
+  background: #fff9f5;
+}
+
+.caseTableRow span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.caseTableRow .caseId,
+.caseTableRow .caseTitle {
+  font-weight: 700;
+}
+
+.caseDetailBody {
+  display: grid;
+  gap: 14px;
+}
+
+.caseDetailBody h3 {
+  margin-bottom: 0;
+  line-height: 1.35;
+}
+
+.detailBlock {
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+}
+
+.detailBlock strong {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.detailBlock p {
+  margin-bottom: 0;
+  color: var(--muted);
+  white-space: pre-wrap;
+}
+
+.detailActions {
+  margin-top: 16px;
+}
+
+.caseFormPanel {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
+.emptyState {
+  padding: 16px 0;
+}
+
+.executionToolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: end;
+  margin-bottom: 14px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #eef7fa;
+}
+
+.executionNavList {
+  display: grid;
+  gap: 8px;
+}
+
+.executionNavItem {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: stretch;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px;
+  background: var(--panel-soft);
+}
+
+.executionNavItem:hover,
+.executionNavItem.selected {
+  border-color: var(--accent);
+  background: #fff9f5;
+}
+
+.executionNavButton {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 4px;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  font-weight: 400;
+}
+
+.executionNavButton:hover {
+  background: transparent;
+}
+
+.executionNavButton strong,
+.executionNavButton span,
+.executionNavButton small {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.executionNavButton small {
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.executionNavActions {
+  display: flex;
+  align-items: start;
+}
+
+.executionNavActions button {
+  padding: 7px 9px;
+}
+
+.executionDetailPane {
+  min-width: 0;
+}
+
+.executionWorkspace {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr) 300px;
+  gap: 14px;
+  align-items: start;
+}
+
+.workspacePane {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  background: #ffffff;
+}
+
+.workspacePane h2 {
+  margin-bottom: 12px;
+  font-size: 16px;
+}
+
+.runSummaryPane {
+  position: sticky;
+  top: 78px;
+}
+
+.historyPane {
+  grid-column: 1 / -1;
+}
+
+.resultDetailPane {
+  position: sticky;
+  top: 78px;
+}
+
+.runSummaryPane .summaryGrid {
+  grid-template-columns: 1fr;
+  margin-bottom: 0;
+}
+
+.runSummaryPane .chartPanel {
+  grid-template-columns: 1fr;
+  justify-items: center;
+}
+
+.runSummaryPane .passRateDonut {
+  width: 124px;
+  height: 124px;
+}
+
+.resultPane .items {
+  max-height: 72vh;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.historyPane .history {
+  max-height: 260px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.executionResultRow {
+  display: grid;
+  grid-template-columns: minmax(90px, 120px) minmax(0, 1fr) auto;
+  grid-template-areas:
+    "case-id case-title case-title"
+    "case-id priority status";
+  gap: 6px 12px;
+  align-items: start;
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 11px;
+  background: var(--panel-soft);
+  color: var(--text);
+  text-align: left;
+  font-weight: 400;
+}
+
+.executionResultRow:hover,
+.executionResultRow.selected {
+  border-color: var(--accent);
+  background: #fff9f5;
+}
+
+.executionResultRow span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.executionResultRow .caseId {
+  grid-area: case-id;
+}
+
+.executionResultRow .caseTitle {
+  grid-area: case-title;
+  line-height: 1.3;
+}
+
+.executionResultRow .caseId,
+.executionResultRow .caseTitle {
+  font-weight: 700;
+}
+
+.executionResultRow .priority {
+  grid-area: priority;
+  justify-self: start;
+  white-space: nowrap;
+}
+
+.executionResultRow .status {
+  grid-area: status;
+  justify-self: end;
+  white-space: nowrap;
+}
+
+.resultDetailBody {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.resultDetailBody h3 {
+  margin-bottom: 0;
+  line-height: 1.35;
+}
+
 .formSectionHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+}
+
+.formActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.importPanel {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
+.importPanel h2 {
+  margin-bottom: 0;
+}
+
+.importPanel p {
+  margin-bottom: 0;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.importPanel button {
+  justify-self: start;
 }
 
 .checklist {
@@ -273,7 +724,7 @@ button.danger:hover {
   border: 1px solid var(--line);
   border-radius: 8px;
   padding: 10px;
-  background: #fbfcff;
+  background: #eef7fa;
 }
 
 .checkboxRow {
@@ -324,7 +775,7 @@ button.danger:hover {
   border: 1px solid var(--line);
   border-radius: 8px;
   padding: 16px;
-  background: #ffffff;
+  background: var(--panel-soft);
 }
 
 .passRateDonut {
@@ -334,8 +785,8 @@ button.danger:hover {
   height: 140px;
   border-radius: 50%;
   background:
-    radial-gradient(circle at center, #ffffff 0 57%, transparent 58%),
-    conic-gradient(var(--pass) var(--pass-rate), #e6e9ef 0);
+    radial-gradient(circle at center, var(--panel-soft) 0 57%, transparent 58%),
+    conic-gradient(var(--pass) var(--pass-rate), #dce8ec 0);
 }
 
 .passRateDonut span {
@@ -367,7 +818,7 @@ button.danger:hover {
   height: 10px;
   overflow: hidden;
   border-radius: 999px;
-  background: #e6e9ef;
+  background: #dce8ec;
 }
 
 .statusBarFill {
@@ -399,12 +850,6 @@ button.danger:hover {
   display: block;
   margin-top: 6px;
   font-size: 24px;
-}
-
-.executionItem {
-  display: grid;
-  grid-template-columns: 1fr minmax(260px, 380px);
-  gap: 18px;
 }
 
 .status {
@@ -443,9 +888,52 @@ button.danger:hover {
   max-width: 360px;
   border-radius: 8px;
   padding: 12px 14px;
-  background: #111827;
+  background: #111318;
   color: #ffffff;
-  box-shadow: 0 10px 24px rgb(0 0 0 / 18%);
+  box-shadow: 0 10px 24px rgb(17 19 24 / 18%);
+}
+
+@media (max-width: 1180px) {
+  .caseManagementWorkspace {
+    grid-template-columns: 240px minmax(0, 1fr);
+  }
+
+  .executionManagementWorkspace {
+    grid-template-columns: 260px minmax(0, 1fr);
+  }
+
+  .executionManagementWorkspace.creatorCollapsed {
+    grid-template-columns: 260px minmax(0, 1fr);
+  }
+
+  .caseDetailPane {
+    grid-column: 1 / -1;
+    position: static;
+    max-height: none;
+  }
+
+  .executionCreatorPane {
+    grid-column: 1 / -1;
+    position: static;
+    max-height: none;
+  }
+
+  .executionWorkspace {
+    grid-template-columns: 220px minmax(0, 1fr);
+  }
+
+  .resultDetailPane {
+    grid-column: 1 / -1;
+    position: static;
+  }
+
+  .caseTableRow {
+    grid-template-columns: 110px minmax(180px, 1fr) 100px;
+  }
+
+  .caseTableRow span:nth-child(3) {
+    display: none;
+  }
 }
 
 @media (max-width: 780px) {
@@ -460,16 +948,62 @@ button.danger:hover {
     align-items: flex-start;
   }
 
-  .layout,
+  .topnav {
+    justify-content: flex-start;
+  }
+
+  .caseWorkspace,
+  .caseManagementWorkspace,
+  .executionPageWorkspace,
+  .executionManagementWorkspace,
   .formGrid,
+  .caseToolbar,
+  .executionToolbar,
+  .detailFilters,
+  .executionWorkspace,
   .summaryGrid,
-  .chartPanel,
-  .executionItem {
+  .chartPanel {
     grid-template-columns: 1fr;
   }
 
-  .wide,
-  .full {
-    grid-column: span 1;
+  .caseNavigatorPane,
+  .caseDetailPane,
+  .executionNavigatorPane,
+  .executionDetailPane,
+  .executionCreatorPane,
+  .runSummaryPane,
+  .resultDetailPane,
+  .historyPane {
+    position: static;
+    max-height: none;
+  }
+
+  .caseTableRow {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .executionNavItem,
+  .executionWorkspace {
+    grid-template-columns: 1fr;
+  }
+
+  .executionResultRow {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "case-id"
+      "case-title"
+      "priority"
+      "status";
+    gap: 6px;
+  }
+
+  .executionResultRow .priority,
+  .executionResultRow .status {
+    justify-self: start;
+  }
+
+  .historyPane {
+    grid-column: auto;
   }
 }

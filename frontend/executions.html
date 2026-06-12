@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mini TestRail - Executions</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <img class="brandIcon" src="assets/app-icon.jpg" alt="Mini TestRail icon" />
+        <div>
+          <h1>Mini TestRail</h1>
+          <p>Manage test cases, executions, results, and history.</p>
+        </div>
+      </div>
+      <nav class="topnav">
+        <a href="index.html">Test Cases</a>
+        <a class="active" href="executions.html">Executions</a>
+        <button id="refreshButton" type="button">Refresh</button>
+      </nav>
+    </header>
+
+    <main id="executionPageRoot" class="executionPageWorkspace executionManagementWorkspace creatorCollapsed">
+      <aside class="panel executionNavigatorPane">
+        <div class="sectionHeader">
+          <h2>Executions</h2>
+          <div class="headerActions">
+            <span id="executionCount" class="muted"></span>
+            <button id="toggleExecutionCreatorButton" type="button">New Execution</button>
+          </div>
+        </div>
+        <div class="executionToolbar">
+          <label>
+            Search
+            <input id="executionSearch" placeholder="Execution name or description" />
+          </label>
+          <button id="clearExecutionSearchButton" class="secondary" type="button">
+            Clear
+          </button>
+        </div>
+        <div id="executionList" class="executionNavList"></div>
+      </aside>
+
+      <section id="executionDetailPanel" class="panel executionDetailPane" hidden>
+        <div class="sectionHeader">
+          <h2>Execution Detail</h2>
+          <span id="selectedExecutionLabel" class="muted">Select an execution</span>
+        </div>
+
+        <div class="addCasesBar">
+          <select id="caseSelect" multiple></select>
+          <button id="addCasesButton" type="button">Add Selected Cases</button>
+        </div>
+
+        <div class="detailFilters">
+          <label>
+            Search
+            <input id="executionItemSearch" placeholder="Test ID, title, feature, sub feature" />
+          </label>
+          <label>
+            Status
+            <select id="executionStatusFilter">
+              <option value="">All statuses</option>
+              <option value="NOT_RUN">NOT_RUN</option>
+              <option value="PASS">PASS</option>
+              <option value="FAIL">FAIL</option>
+              <option value="BLOCKED">BLOCKED</option>
+              <option value="SKIPPED">SKIPPED</option>
+            </select>
+          </label>
+          <label>
+            Priority
+            <select id="executionPriorityFilter">
+              <option value="">All priorities</option>
+              <option value="Critical">Critical</option>
+              <option value="High">High</option>
+              <option value="Medium">Medium</option>
+              <option value="Low">Low</option>
+            </select>
+          </label>
+          <button id="clearExecutionFiltersButton" class="secondary" type="button">
+            Clear Filters
+          </button>
+        </div>
+
+        <div class="executionWorkspace">
+          <aside class="workspacePane runSummaryPane">
+            <h2>Run Summary</h2>
+            <div id="executionSummary" class="summaryGrid"></div>
+          </aside>
+
+          <section class="workspacePane resultPane">
+            <div class="sectionHeader">
+              <h2>Tests & Results</h2>
+            </div>
+            <div id="executionItems" class="items"></div>
+          </section>
+
+          <aside class="workspacePane resultDetailPane">
+            <h2 id="selectedExecutionItemTitle">Selected Result</h2>
+            <div id="selectedExecutionItemBody" class="resultDetailBody">
+              <p class="muted">Select a test result to view details and update status.</p>
+            </div>
+            <form id="selectedExecutionItemForm" class="itemEditor" hidden>
+              <label>
+                Status
+                <select id="selectedExecutionItemStatus" name="status">
+                  <option value="NOT_RUN">NOT_RUN</option>
+                  <option value="PASS">PASS</option>
+                  <option value="FAIL">FAIL</option>
+                  <option value="BLOCKED">BLOCKED</option>
+                  <option value="SKIPPED">SKIPPED</option>
+                </select>
+              </label>
+              <label>
+                Actual Result Notes
+                <textarea id="selectedExecutionItemActualResult" name="actualResult"></textarea>
+              </label>
+              <button type="submit">Save Result</button>
+            </form>
+          </aside>
+
+          <aside class="workspacePane historyPane">
+            <h2>History</h2>
+            <div id="historyList" class="history"></div>
+          </aside>
+        </div>
+      </section>
+
+      <section id="executionEmptyPanel" class="panel executionDetailPane emptyState">
+        <h2>Select an Execution</h2>
+        <p class="muted">Choose an execution on the left to update results, review history, and see pass rate.</p>
+      </section>
+
+      <aside id="executionCreatorPane" class="panel executionCreatorPane" hidden>
+        <div class="sectionHeader">
+          <h2>Create Execution</h2>
+          <button id="closeExecutionCreatorButton" class="secondary" type="button">Close</button>
+        </div>
+        <form id="executionForm">
+          <label>
+            Name
+            <input id="executionName" required placeholder="Regression Run 2026-06-11" />
+          </label>
+          <label>
+            Description
+            <textarea id="executionDescription" placeholder="Smoke tests for the new release"></textarea>
+          </label>
+          <label>
+            Search Test Cases
+            <input id="executionCaseSearch" placeholder="Filter by test case title" />
+          </label>
+          <div class="formSectionHeader">
+            <strong>Test Cases</strong>
+            <span id="selectedCaseCount" class="muted">0 selected</span>
+          </div>
+          <div id="executionCaseChecklist" class="checklist"></div>
+          <button type="submit">Create Execution</button>
+        </form>
+      </aside>
+    </main>
+
+    <div id="toast" class="toast" hidden></div>
+    <script src="app.js"></script>
+  </body>
+</html>

@@ -1,14 +1,32 @@
 services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-mini_testrail}
+      POSTGRES_USER: ${POSTGRES_USER:-mini_testrail}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-mini_testrail_password}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-mini_testrail} -d ${POSTGRES_DB:-mini_testrail}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
   backend:
     build:
       context: ./backend
     environment:
-      DATABASE_PATH: ${DATABASE_PATH:-/app/data/testrail.db}
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://mini_testrail:mini_testrail_password@postgres:5432/mini_testrail}
       FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:5173,http://127.0.0.1:5173}
     ports:
       - "8000:8000"
-    volumes:
-      - backend_data:/app/data
+    depends_on:
+      postgres:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/"]
       interval: 10s
@@ -34,4 +52,4 @@ services:
       start_period: 5s
 
 volumes:
-  backend_data:
+  postgres_data:

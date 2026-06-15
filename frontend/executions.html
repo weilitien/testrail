@@ -85,6 +85,26 @@
           </button>
         </div>
 
+        <div class="bulkResultBar">
+          <span id="selectedResultCount" class="muted">0 selected</span>
+          <label>
+            Bulk Status
+            <select id="bulkResultStatus">
+              <option value="PASS">PASS</option>
+              <option value="FAIL">FAIL</option>
+              <option value="BLOCKED">BLOCKED</option>
+              <option value="SKIPPED">SKIPPED</option>
+              <option value="NOT_RUN">NOT_RUN</option>
+            </select>
+          </label>
+          <label>
+            Notes
+            <input id="bulkResultNotes" placeholder="Optional actual result notes" />
+          </label>
+          <button id="applyBulkResultButton" type="button">Apply</button>
+          <button id="clearBulkSelectionButton" class="secondary" type="button">Clear Selection</button>
+        </div>
+
         <div class="executionWorkspace">
           <aside class="workspacePane runSummaryPane">
             <h2>Run Summary</h2>
@@ -151,6 +171,12 @@
           <label>
             Search Test Cases
             <input id="executionCaseSearch" placeholder="Filter by test case title" />
+          </label>
+          <label>
+            Category
+            <select id="executionCaseCategoryFilter">
+              <option value="">All categories</option>
+            </select>
           </label>
           <div class="formSectionHeader">
             <strong>Test Cases</strong>

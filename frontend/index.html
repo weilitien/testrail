@@ -35,14 +35,6 @@
           </label>
           <button type="submit">Add</button>
         </form>
-        <div id="categoryTree" class="categoryTree"></div>
-      </aside>
-
-      <section class="panel caseListPane">
-        <div class="sectionHeader">
-          <h2>Test Cases</h2>
-          <button id="createCaseButton" type="button">New Case</button>
-        </div>
         <div class="caseToolbar">
           <label>
             Search
@@ -60,8 +52,12 @@
           </label>
           <button id="clearCaseFiltersButton" class="secondary" type="button">Clear Filters</button>
         </div>
-        <div id="caseList" class="list"></div>
-      </section>
+        <div class="sectionHeader compactHeader">
+          <h2>Test Cases</h2>
+          <button id="createCaseButton" type="button">New Case</button>
+        </div>
+        <div id="categoryTree" class="categoryTree"></div>
+      </aside>
 
       <aside class="panel caseDetailPane">
         <div id="caseDetailEmpty" class="emptyState">
@@ -143,11 +139,30 @@
             <button id="downloadCsvTemplateButton" class="secondary" type="button">
               Download Template
             </button>
-            <button id="importCsvButton" type="button">Import CSV</button>
+            <button id="previewCsvButton" type="button">Preview CSV</button>
           </div>
         </div>
       </aside>
     </main>
+
+    <div id="csvPreviewModal" class="modalOverlay" hidden>
+      <section class="modalDialog csvPreviewDialog" role="dialog" aria-modal="true" aria-labelledby="csvPreviewTitle">
+        <div class="modalHeader">
+          <div>
+            <h2 id="csvPreviewTitle">CSV Import Preview</h2>
+            <p class="muted">Review validation results before importing test cases.</p>
+          </div>
+          <button id="cancelCsvPreviewButton" class="secondary" type="button">Close</button>
+        </div>
+        <div id="csvPreviewPanel" class="csvPreviewPanel"></div>
+        <div id="csvImportActions" class="modalActions" hidden>
+          <button id="confirmCsvImportButton" type="button">Confirm Import</button>
+          <button id="cancelCsvPreviewFooterButton" class="secondary" type="button">
+            Cancel
+          </button>
+        </div>
+      </section>
+    </div>
 
     <div id="toast" class="toast" hidden></div>
     <script src="env.js"></script>

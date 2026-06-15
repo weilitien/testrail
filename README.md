@@ -1,6 +1,6 @@
 # Mini TestRail
 
-A beginner-friendly full-stack TestRail-like web app using FastAPI, SQLite, and plain HTML/CSS/JavaScript.
+A beginner-friendly full-stack TestRail-like web app using FastAPI, PostgreSQL for Docker Compose, SQLite fallback for simple manual runs, and plain HTML/CSS/JavaScript.
 
 The app has two main workspaces:
 
@@ -10,7 +10,7 @@ The app has two main workspaces:
 ## Tech Stack
 
 - Backend: FastAPI
-- Database: SQLite
+- Database: PostgreSQL in Docker Compose, SQLite fallback for simple manual local runs
 - Frontend: plain HTML, CSS, JavaScript
 - Backend deployment target: Railway
 - Frontend deployment target: Netlify
@@ -24,6 +24,7 @@ The app has two main workspaces:
 - Duplicate test cases
 - Delete test cases
 - Import test cases from CSV
+- Preview CSV imports before confirming
 - Create, rename, and delete categories
 - Search test cases by Test ID, title, or category
 - Filter test cases by priority
@@ -42,6 +43,7 @@ Test cases include:
 ### Executions
 
 - Create executions by selecting test cases from a checkbox list
+- Filter and select execution test cases by category
 - Execution names must be unique
 - Delete executions
 - Add more test cases into an existing execution
@@ -49,6 +51,7 @@ Test cases include:
 - View execution pass rate and status chart
 - Filter execution results by search, status, and priority
 - Review execution results grouped by category with expandable sections
+- Bulk update selected execution results
 - Select one result from `Tests & Results` and edit it in the `Selected Result` panel
 - Update result status: `NOT_RUN`, `PASS`, `FAIL`, `BLOCKED`, `SKIPPED`
 - Add actual result notes
@@ -68,8 +71,7 @@ http://localhost:5173/index.html
 
 Layout:
 
-- Left: Category tree with add, rename, and delete actions
-- Center: searchable and filterable test case list
+- Left: category manager plus searchable test case tree grouped by category
 - Right: selected test case detail, create/edit form with category dropdown, and CSV import
 
 ### Executions Page
@@ -135,7 +137,8 @@ Services:
 
 - Frontend: `http://localhost:5173`
 - Backend API: `http://localhost:8000`
-- SQLite data volume: `backend_data`
+- PostgreSQL: `localhost:5432`
+- PostgreSQL data volume: `postgres_data`
 
 Check running containers:
 
@@ -161,7 +164,7 @@ Stop the app:
 docker compose down
 ```
 
-Remove the Docker SQLite volume if you want a clean database:
+Remove the Docker PostgreSQL volume if you want a clean database:
 
 ```bash
 docker compose down -v
@@ -193,7 +196,7 @@ Then open:
 http://localhost:5174/index.html
 ```
 
-If the app starts but old local data looks wrong, reset the Docker SQLite volume:
+If the app starts but old local data looks wrong, reset the Docker PostgreSQL volume:
 
 ```bash
 docker compose down -v
@@ -217,6 +220,8 @@ The API runs at:
 ```text
 http://localhost:8000
 ```
+
+Manual backend runs use SQLite by default. Set `DATABASE_URL` if you want to connect the backend to PostgreSQL outside Docker.
 
 ### Frontend
 
@@ -256,7 +261,8 @@ http://localhost:5174/index.html
 
 Optional environment variables:
 
-- `DATABASE_PATH`: SQLite database path. Defaults to `testrail.db`.
+- `DATABASE_URL`: PostgreSQL connection string. If omitted, the backend uses local SQLite.
+- `DATABASE_PATH`: SQLite database path for manual local fallback. Defaults to `testrail.db`.
 - `FRONTEND_ORIGIN`: allowed frontend origin for CORS. Defaults to `*`.
 
 ### Netlify Frontend
@@ -301,6 +307,7 @@ window.API_BASE = "https://your-api.up.railway.app";
 - `GET /executions/{execution_id}`
 - `DELETE /executions/{execution_id}`
 - `POST /executions/{execution_id}/test-cases`
+- `PATCH /execution-items/bulk`
 - `PATCH /execution-items/{item_id}`
 - `GET /executions/{execution_id}/history`
 
@@ -373,7 +380,7 @@ TC-PWR-001,Hardware,Verify Power On/Off Function,Critical,Press the power button
 
 Display-style headers like `Test ID`, `Category`, `Expected Result`, and `Test Data` also work.
 CSV `steps` and `expected_result` values are imported as the first structured step row.
-The Test Cases page also provides a `Download Template` button in the CSV import area.
+The Test Cases page also provides a `Download Template` button and a modal preview step before import. Preview checks required titles, unknown priorities, and duplicate Test IDs.
 
 ### Create an Execution
 
@@ -406,10 +413,24 @@ Execution names must be unique. If a duplicate name is submitted, the API return
 
 Every result update is saved into execution history.
 
+### Bulk Update Execution Results
+
+```json
+{
+  "item_ids": [1, 2, 3],
+  "status": "PASS",
+  "actual_result": "Passed during smoke verification."
+}
+```
+
+Bulk updates also write one history entry per updated result.
+
 ## Notes
 
-- SQLite foreign keys are enabled in the backend.
-- If an older local database still has retired Feature/Sub Feature columns, the backend clears and rebuilds the local SQLite tables on startup.
+- Docker Compose uses PostgreSQL.
+- Manual local backend runs use SQLite unless `DATABASE_URL` is set.
+- SQLite foreign keys are enabled when using the SQLite fallback.
+- If an older local SQLite database still has retired Feature/Sub Feature columns, the backend clears and rebuilds the local SQLite tables on startup.
 - Deleting a category does not delete test cases. Related test cases become Uncategorized.
 - Deleting a test case also removes related execution items and history through cascading deletes.
 - Deleting an execution also removes its results and history.

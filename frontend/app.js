@@ -9,12 +9,15 @@ let executions = [];
 let categories = [];
 let selectedExecutionId = null;
 let selectedExecutionItemId = null;
+let selectedExecutionItemIds = new Set();
 let selectedExecutionCaseIds = new Set();
 let selectedCaseId = null;
 let selectedCaseGroup = { type: "all", category: "" };
 let editingTestCaseId = null;
 let currentExecutionDetail = null;
 let collapsedExecutionCategories = new Set();
+let collapsedCaseCategories = new Set();
+let pendingCsvImportCases = [];
 
 const elements = {
   caseForm: document.querySelector("#caseForm"),
@@ -41,25 +44,36 @@ const elements = {
   executionCreatorPane: document.querySelector("#executionCreatorPane"),
   toggleExecutionCreatorButton: document.querySelector("#toggleExecutionCreatorButton"),
   closeExecutionCreatorButton: document.querySelector("#closeExecutionCreatorButton"),
-  caseList: document.querySelector("#caseList"),
   caseSearch: document.querySelector("#caseSearch"),
   casePriorityFilter: document.querySelector("#casePriorityFilter"),
   clearCaseFiltersButton: document.querySelector("#clearCaseFiltersButton"),
   caseCsvFile: document.querySelector("#caseCsvFile"),
   downloadCsvTemplateButton: document.querySelector("#downloadCsvTemplateButton"),
-  importCsvButton: document.querySelector("#importCsvButton"),
+  previewCsvButton: document.querySelector("#previewCsvButton"),
+  confirmCsvImportButton: document.querySelector("#confirmCsvImportButton"),
+  cancelCsvPreviewButton: document.querySelector("#cancelCsvPreviewButton"),
+  cancelCsvPreviewFooterButton: document.querySelector("#cancelCsvPreviewFooterButton"),
+  csvPreviewModal: document.querySelector("#csvPreviewModal"),
+  csvPreviewPanel: document.querySelector("#csvPreviewPanel"),
+  csvImportActions: document.querySelector("#csvImportActions"),
   executionList: document.querySelector("#executionList"),
   executionSearch: document.querySelector("#executionSearch"),
   clearExecutionSearchButton: document.querySelector("#clearExecutionSearchButton"),
   caseCount: document.querySelector("#caseCount"),
   executionCount: document.querySelector("#executionCount"),
   executionCaseSearch: document.querySelector("#executionCaseSearch"),
+  executionCaseCategoryFilter: document.querySelector("#executionCaseCategoryFilter"),
   executionCaseChecklist: document.querySelector("#executionCaseChecklist"),
   selectedCaseCount: document.querySelector("#selectedCaseCount"),
   caseSelect: document.querySelector("#caseSelect"),
   addCasesButton: document.querySelector("#addCasesButton"),
   executionSummary: document.querySelector("#executionSummary"),
   executionItems: document.querySelector("#executionItems"),
+  bulkResultStatus: document.querySelector("#bulkResultStatus"),
+  bulkResultNotes: document.querySelector("#bulkResultNotes"),
+  applyBulkResultButton: document.querySelector("#applyBulkResultButton"),
+  clearBulkSelectionButton: document.querySelector("#clearBulkSelectionButton"),
+  selectedResultCount: document.querySelector("#selectedResultCount"),
   selectedExecutionItemTitle: document.querySelector("#selectedExecutionItemTitle"),
   selectedExecutionItemBody: document.querySelector("#selectedExecutionItemBody"),
   selectedExecutionItemForm: document.querySelector("#selectedExecutionItemForm"),
@@ -126,6 +140,7 @@ function renderTestCases() {
 
   renderCategoryTree();
   renderCategoryOptions();
+  renderExecutionCaseCategoryFilter();
   renderCaseDetail();
 
   if (elements.caseSelect) {
@@ -138,35 +153,6 @@ function renderTestCases() {
   }
   renderExecutionCaseChecklist();
 
-  if (!elements.caseList) {
-    return;
-  }
-
-  elements.caseList.innerHTML = visibleTestCases.length
-    ? ""
-    : testCases.length
-      ? "<p class='muted'>No test cases match the current filters.</p>"
-      : "<p class='muted'>No test cases yet.</p>";
-
-  for (const testCase of visibleTestCases) {
-    const row = document.createElement("button");
-    row.className = `caseTableRow ${selectedCaseId === testCase.id ? "selected" : ""}`;
-    row.type = "button";
-    row.innerHTML = `
-      <span class="caseId">${escapeHtml(testCase.test_id || "No Test ID")}</span>
-      <span class="caseTitle">${escapeHtml(testCase.title)}</span>
-      <span>${escapeHtml(testCase.category || "No category")}</span>
-      <span class="priority ${escapeHtml(testCase.priority || "Medium")}">
-        ${escapeHtml(testCase.priority || "Medium")}
-      </span>
-    `;
-    row.addEventListener("click", () => {
-      selectedCaseId = testCase.id;
-      hideCaseForm();
-      renderTestCases();
-    });
-    elements.caseList.appendChild(row);
-  }
 }
 
 function renderCategoryTree() {
@@ -174,7 +160,8 @@ function renderCategoryTree() {
     return;
   }
 
-  const uncategorizedCount = testCases.filter((testCase) => !testCase.category).length;
+  const visibleForTree = filterTestCases(testCases, { ignoreGroup: true });
+  const groupedCases = groupTestCasesByCategory(visibleForTree);
 
   elements.categoryTree.innerHTML = "";
   elements.categoryTree.appendChild(
@@ -189,51 +176,109 @@ function renderCategoryTree() {
     })
   );
 
-  if (uncategorizedCount) {
-    elements.categoryTree.appendChild(
-      createCategoryTreeRow({
-        label: "Uncategorized",
-        count: uncategorizedCount,
-        active: selectedCaseGroup.type === "category" && selectedCaseGroup.category === "",
-        onClick: () => {
-          selectedCaseGroup = { type: "category", category: "" };
-          renderTestCases();
-        },
-      })
-    );
+  if (!groupedCases.length) {
+    const emptyMessage = document.createElement("p");
+    emptyMessage.className = "muted treeEmptyState";
+    emptyMessage.textContent = testCases.length
+      ? "No test cases match the current filters."
+      : "No test cases yet.";
+    elements.categoryTree.appendChild(emptyMessage);
+    return;
   }
 
-  for (const category of categories) {
-    elements.categoryTree.appendChild(
-      createCategoryTreeRow({
-        label: category.name,
-        count: category.test_count,
-        active:
-          selectedCaseGroup.type === "category" &&
-          selectedCaseGroup.category === category.name,
-        onClick: () => {
-          selectedCaseGroup = { type: "category", category: category.name };
-          renderTestCases();
-        },
-        onRename: () => renameCategory(category),
-        onDelete: () => deleteCategory(category),
-      })
-    );
+  for (const group of groupedCases) {
+    const categoryRecord = categories.find((category) => category.name === group.category);
+    elements.categoryTree.appendChild(createCaseCategoryGroup(group, categoryRecord));
   }
 }
 
-function createCategoryTreeRow({ label, count, active, onClick, onRename, onDelete }) {
+function createCaseCategoryGroup(group, categoryRecord) {
+  const groupElement = document.createElement("section");
+  groupElement.className = "caseCategoryGroup";
+  const collapsed = collapsedCaseCategories.has(group.category);
+
+  groupElement.appendChild(
+    createCategoryTreeRow({
+      label: group.label,
+      count: group.items.length,
+      active:
+        selectedCaseGroup.type === "category" &&
+        selectedCaseGroup.category === group.category,
+      collapsed,
+      onToggle: () => {
+        if (collapsed) {
+          collapsedCaseCategories.delete(group.category);
+        } else {
+          collapsedCaseCategories.add(group.category);
+        }
+        renderTestCases();
+      },
+      onClick: () => {
+        selectedCaseGroup = { type: "category", category: group.category };
+        renderTestCases();
+      },
+      onRename: categoryRecord ? () => renameCategory(categoryRecord) : null,
+      onDelete: categoryRecord ? () => deleteCategory(categoryRecord) : null,
+    })
+  );
+
+  const caseList = document.createElement("div");
+  caseList.className = "caseTreeItems";
+  caseList.hidden = collapsed;
+  for (const testCase of group.items) {
+    caseList.appendChild(createCaseTreeItem(testCase));
+  }
+  groupElement.appendChild(caseList);
+  return groupElement;
+}
+
+function createCaseTreeItem(testCase) {
+  const row = document.createElement("button");
+  row.className = `caseTreeItem ${selectedCaseId === testCase.id ? "selected" : ""}`;
+  row.type = "button";
+  row.innerHTML = `
+    <span class="caseId">${escapeHtml(testCase.test_id || "No Test ID")}</span>
+    <strong>${escapeHtml(testCase.title)}</strong>
+    <span class="priority ${escapeHtml(testCase.priority || "Medium")}">
+      ${escapeHtml(testCase.priority || "Medium")}
+    </span>
+  `;
+  row.addEventListener("click", () => {
+    selectedCaseId = testCase.id;
+    hideCaseForm();
+    renderTestCases();
+  });
+  return row;
+}
+
+function createCategoryTreeRow({
+  label,
+  count,
+  active,
+  collapsed = false,
+  onClick,
+  onToggle,
+  onRename,
+  onDelete,
+}) {
   const row = document.createElement("div");
   row.className = `categoryRow ${active ? "active" : ""}`;
 
   const button = document.createElement("button");
-  button.className = "treeItem";
+  button.className = `treeItem ${onToggle ? "hasToggle" : "noToggle"}`;
   button.type = "button";
   button.innerHTML = `
+    ${onToggle ? `<span class="categoryToggle">${collapsed ? "+" : "-"}</span>` : ""}
     <span>${escapeHtml(label)}</span>
     <strong>${count}</strong>
   `;
   button.addEventListener("click", onClick);
+  if (onToggle) {
+    button.querySelector(".categoryToggle").addEventListener("click", (event) => {
+      event.stopPropagation();
+      onToggle();
+    });
+  }
   row.appendChild(button);
 
   if (onRename && onDelete) {
@@ -280,6 +325,33 @@ function renderCategoryOptions() {
       .join("")}
   `;
   categorySelect.value = categories.some((category) => category.name === currentValue)
+    ? currentValue
+    : "";
+}
+
+function renderExecutionCaseCategoryFilter() {
+  if (!elements.executionCaseCategoryFilter) {
+    return;
+  }
+
+  const currentValue = elements.executionCaseCategoryFilter.value;
+  const hasUncategorized = testCases.some((testCase) => !testCase.category);
+  elements.executionCaseCategoryFilter.innerHTML = `
+    <option value="">All categories</option>
+    ${hasUncategorized ? '<option value="__uncategorized__">Uncategorized</option>' : ""}
+    ${categories
+      .map(
+        (category) =>
+          `<option value="${escapeHtml(category.name)}">${escapeHtml(category.name)}</option>`
+      )
+      .join("")}
+  `;
+  const validValues = new Set([
+    "",
+    ...(hasUncategorized ? ["__uncategorized__"] : []),
+    ...categories.map((category) => category.name),
+  ]);
+  elements.executionCaseCategoryFilter.value = validValues.has(currentValue)
     ? currentValue
     : "";
 }
@@ -369,14 +441,15 @@ function renderStepsTable(caseSteps) {
   `;
 }
 
-function filterTestCases(cases) {
+function filterTestCases(cases, options = {}) {
   const searchText = elements.caseSearch
     ? elements.caseSearch.value.trim().toLowerCase()
     : "";
   const priority = elements.casePriorityFilter ? elements.casePriorityFilter.value : "";
+  const ignoreGroup = Boolean(options.ignoreGroup);
 
   return cases.filter((testCase) => {
-    const category = testCase.category || "";
+    const category = testCase.category || "__uncategorized__";
     const searchableText = [
       testCase.test_id,
       testCase.title,
@@ -388,6 +461,7 @@ function filterTestCases(cases) {
     const matchesSearch = !searchText || searchableText.includes(searchText);
     const matchesPriority = !priority || testCase.priority === priority;
     const matchesGroup =
+      ignoreGroup ||
       selectedCaseGroup.type === "all" ||
       (selectedCaseGroup.type === "category" && category === selectedCaseGroup.category);
 
@@ -497,7 +571,85 @@ function csvRowsToTestCases(rows) {
   }).filter((testCase) => testCase.title);
 }
 
-async function importTestCasesFromCsv() {
+function buildCsvImportPreview(rows) {
+  const preview = {
+    testCases: [],
+    errors: [],
+    warnings: [],
+  };
+  if (rows.length < 2) {
+    preview.errors.push("CSV must include a header row and at least one data row.");
+    return preview;
+  }
+
+  const headers = rows[0].map(normalizeCsvHeader);
+  const seenTestIds = new Set();
+  const existingTestIds = new Set(
+    testCases
+      .map((testCase) => testCase.test_id)
+      .filter(Boolean)
+      .map((testId) => testId.toLowerCase())
+  );
+
+  rows.slice(1).forEach((row, rowIndex) => {
+    const record = {};
+    headers.forEach((header, index) => {
+      record[header] = row[index] || "";
+    });
+
+    const rowNumber = rowIndex + 2;
+    const steps = getCsvValue(record, ["steps"]);
+    const expectedResult = getCsvValue(record, ["expected_result", "expected result"]);
+    const testId = getCsvValue(record, ["test_id", "test id"]);
+    const title = getCsvValue(record, ["title"]);
+    const priority = getCsvValue(record, ["priority"], "Medium");
+    const normalizedPriority = ["Critical", "High", "Medium", "Low"].includes(priority)
+      ? priority
+      : "Medium";
+
+    if (!title) {
+      preview.errors.push(`Row ${rowNumber}: title is required.`);
+      return;
+    }
+
+    if (!["Critical", "High", "Medium", "Low"].includes(priority)) {
+      preview.warnings.push(`Row ${rowNumber}: unknown priority "${priority}", using Medium.`);
+    }
+
+    if (testId) {
+      const testIdKey = testId.toLowerCase();
+      if (seenTestIds.has(testIdKey)) {
+        preview.warnings.push(`Row ${rowNumber}: duplicate Test ID "${testId}" in this CSV.`);
+      }
+      if (existingTestIds.has(testIdKey)) {
+        preview.warnings.push(`Row ${rowNumber}: Test ID "${testId}" already exists.`);
+      }
+      seenTestIds.add(testIdKey);
+    }
+
+    preview.testCases.push({
+      test_id: testId,
+      category: getCsvValue(record, ["category"]),
+      title,
+      priority: normalizedPriority,
+      steps,
+      expected_result: expectedResult,
+      case_steps:
+        steps || expectedResult
+          ? [{ step_text: steps, expected_result: expectedResult }]
+          : [],
+      test_data: getCsvValue(record, ["test_data", "test data"]),
+    });
+  });
+
+  if (!preview.testCases.length && !preview.errors.length) {
+    preview.errors.push("No valid test cases found in CSV.");
+  }
+
+  return preview;
+}
+
+async function previewTestCasesFromCsv() {
   const file = elements.caseCsvFile.files[0];
   if (!file) {
     showToast("Choose a CSV file first");
@@ -506,21 +658,96 @@ async function importTestCasesFromCsv() {
 
   try {
     const text = await file.text();
-    const testCasesToImport = csvRowsToTestCases(parseCsv(text));
-    if (!testCasesToImport.length) {
-      showToast("No valid test cases found in CSV");
-      return;
-    }
-
-    const result = await api("/test-cases/bulk", {
-      method: "POST",
-      body: JSON.stringify({ test_cases: testCasesToImport }),
-    });
-    elements.caseCsvFile.value = "";
-    showToast(`Imported ${result.created_count} test case(s)`);
-    await loadInitialData();
+    const preview = buildCsvImportPreview(parseCsv(text));
+    pendingCsvImportCases = preview.errors.length ? [] : preview.testCases;
+    renderCsvImportPreview(preview);
   } catch (error) {
     showToast(error.message);
+  }
+}
+
+function renderCsvImportPreview(preview) {
+  if (!elements.csvPreviewModal || !elements.csvPreviewPanel || !elements.csvImportActions) {
+    return;
+  }
+
+  elements.csvPreviewModal.hidden = false;
+  elements.csvImportActions.hidden = Boolean(preview.errors.length);
+  const sampleRows = preview.testCases.slice(0, 20);
+  elements.csvPreviewPanel.innerHTML = `
+    <div class="previewSummary">
+      <strong>${preview.testCases.length} valid case(s)</strong>
+      <span>${preview.errors.length} error(s)</span>
+      <span>${preview.warnings.length} warning(s)</span>
+    </div>
+    ${preview.errors.length ? renderPreviewMessages("Errors", preview.errors, "error") : ""}
+    ${preview.warnings.length ? renderPreviewMessages("Warnings", preview.warnings, "warning") : ""}
+    ${
+      sampleRows.length
+        ? `
+          <div class="previewTable">
+            <div class="previewTableHeader">
+              <span>Test ID</span>
+              <span>Title</span>
+              <span>Category</span>
+              <span>Priority</span>
+            </div>
+            ${sampleRows
+              .map(
+                (testCase) => `
+                  <div class="previewTableRow">
+                    <span>${escapeHtml(testCase.test_id || "No Test ID")}</span>
+                    <span>${escapeHtml(testCase.title)}</span>
+                    <span>${escapeHtml(testCase.category || "Uncategorized")}</span>
+                    <span>${escapeHtml(testCase.priority)}</span>
+                  </div>
+                `
+              )
+              .join("")}
+          </div>
+        `
+        : ""
+    }
+  `;
+}
+
+function renderPreviewMessages(title, messages, type) {
+  return `
+    <div class="previewMessages ${type}">
+      <strong>${title}</strong>
+      <ul>
+        ${messages.map((message) => `<li>${escapeHtml(message)}</li>`).join("")}
+      </ul>
+    </div>
+  `;
+}
+
+async function confirmCsvImport() {
+  if (!pendingCsvImportCases.length) {
+    showToast("Preview a valid CSV first");
+    return;
+  }
+
+  const result = await api("/test-cases/bulk", {
+    method: "POST",
+    body: JSON.stringify({ test_cases: pendingCsvImportCases }),
+  });
+  clearCsvPreview();
+  elements.caseCsvFile.value = "";
+  showToast(`Imported ${result.created_count} test case(s)`);
+  await loadInitialData();
+}
+
+function clearCsvPreview() {
+  pendingCsvImportCases = [];
+  if (elements.csvPreviewModal) {
+    elements.csvPreviewModal.hidden = true;
+  }
+  if (elements.csvPreviewPanel) {
+    elements.csvPreviewPanel.innerHTML = "";
+  }
+  if (elements.csvImportActions) {
+    elements.csvImportActions.hidden = true;
   }
 }
 
@@ -612,45 +839,108 @@ function renderExecutionCaseChecklist() {
   }
 
   const searchText = elements.executionCaseSearch.value.trim().toLowerCase();
-  const filteredCases = testCases.filter((testCase) =>
-    testCase.title.toLowerCase().includes(searchText)
-  );
+  const selectedCategory = elements.executionCaseCategoryFilter
+    ? elements.executionCaseCategoryFilter.value
+    : "";
+  const filteredCases = testCases.filter((testCase) => {
+    const searchableText = [
+      testCase.test_id,
+      testCase.title,
+      testCase.category,
+      testCase.priority,
+    ]
+      .join(" ")
+      .toLowerCase();
+    const categoryValue = testCase.category || "__uncategorized__";
+    const matchesSearch = !searchText || searchableText.includes(searchText);
+    const matchesCategory = !selectedCategory || categoryValue === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
 
   elements.executionCaseChecklist.innerHTML = filteredCases.length
     ? ""
     : "<p class='muted'>No matching test cases.</p>";
 
-  for (const testCase of filteredCases) {
-    const label = document.createElement("label");
-    label.className = "checkboxRow";
-    label.innerHTML = `
-      <input
-        type="checkbox"
-        name="executionCase"
-        value="${testCase.id}"
-        ${selectedExecutionCaseIds.has(testCase.id) ? "checked" : ""}
-      />
-      <span>
-        <strong>${formatTestCaseLabel(testCase)}</strong>
-        <small>
-          ${escapeHtml(testCase.category || "No category")} /
-          ${escapeHtml(testCase.priority || "Medium")}
-        </small>
-      </span>
+  for (const group of groupTestCasesByCategory(filteredCases)) {
+    const groupElement = document.createElement("section");
+    groupElement.className = "checklistCategoryGroup";
+    groupElement.innerHTML = `
+      <div class="checklistCategoryHeader">
+        <strong>${escapeHtml(group.label)}</strong>
+        <span>${group.items.length} case(s)</span>
+        <div class="checklistCategoryActions">
+          <button class="iconButton" type="button" data-action="select">Select group</button>
+          <button class="iconButton dangerText" type="button" data-action="clear">Clear group</button>
+        </div>
+      </div>
+      <div class="checklistCategoryItems"></div>
     `;
-    label.querySelector("input").addEventListener("change", (event) => {
-      const testCaseId = Number(event.currentTarget.value);
-      if (event.currentTarget.checked) {
-        selectedExecutionCaseIds.add(testCaseId);
-      } else {
-        selectedExecutionCaseIds.delete(testCaseId);
+
+    groupElement.querySelector("[data-action='select']").addEventListener("click", () => {
+      for (const testCase of group.items) {
+        selectedExecutionCaseIds.add(testCase.id);
       }
-      updateSelectedCaseCount();
+      renderExecutionCaseChecklist();
     });
-    elements.executionCaseChecklist.appendChild(label);
+    groupElement.querySelector("[data-action='clear']").addEventListener("click", () => {
+      for (const testCase of group.items) {
+        selectedExecutionCaseIds.delete(testCase.id);
+      }
+      renderExecutionCaseChecklist();
+    });
+
+    const groupItems = groupElement.querySelector(".checklistCategoryItems");
+    for (const testCase of group.items) {
+      groupItems.appendChild(createExecutionCaseCheckbox(testCase));
+    }
+
+    elements.executionCaseChecklist.appendChild(groupElement);
   }
 
   updateSelectedCaseCount();
+}
+
+function groupTestCasesByCategory(cases) {
+  const groups = new Map();
+  for (const testCase of cases) {
+    const category = testCase.category || "__uncategorized__";
+    const label = testCase.category || "Uncategorized";
+    if (!groups.has(category)) {
+      groups.set(category, { category, label, items: [] });
+    }
+    groups.get(category).items.push(testCase);
+  }
+  return Array.from(groups.values()).sort((a, b) => a.label.localeCompare(b.label));
+}
+
+function createExecutionCaseCheckbox(testCase) {
+  const label = document.createElement("label");
+  label.className = "checkboxRow";
+  label.innerHTML = `
+    <input
+      type="checkbox"
+      name="executionCase"
+      value="${testCase.id}"
+      ${selectedExecutionCaseIds.has(testCase.id) ? "checked" : ""}
+    />
+    <span>
+      <strong>${formatTestCaseLabel(testCase)}</strong>
+      <small>
+        ${escapeHtml(testCase.category || "No category")} /
+        ${escapeHtml(testCase.priority || "Medium")}
+      </small>
+    </span>
+  `;
+  label.querySelector("input").addEventListener("change", (event) => {
+    const testCaseId = Number(event.currentTarget.value);
+    if (event.currentTarget.checked) {
+      selectedExecutionCaseIds.add(testCaseId);
+    } else {
+      selectedExecutionCaseIds.delete(testCaseId);
+    }
+    updateSelectedCaseCount();
+  });
+  return label;
 }
 
 function getSelectedExecutionCaseIds() {
@@ -749,6 +1039,7 @@ function hideExecutionCreator() {
 function clearExecutionDetail() {
   selectedExecutionId = null;
   selectedExecutionItemId = null;
+  selectedExecutionItemIds = new Set();
   currentExecutionDetail = null;
   if (elements.detailPanel) {
     elements.detailPanel.hidden = true;
@@ -769,6 +1060,7 @@ function clearExecutionDetail() {
     elements.historyList.innerHTML = "";
   }
   renderSelectedExecutionItemDetail(null);
+  updateSelectedResultCount();
   resetExecutionFilters();
 }
 
@@ -783,6 +1075,12 @@ function renderExecutionDetail(detail) {
   if (!selectedItemStillVisible) {
     selectedExecutionItemId = filteredItems[0]?.id || null;
   }
+  selectedExecutionItemIds = new Set(
+    Array.from(selectedExecutionItemIds).filter((itemId) =>
+      items.some((item) => item.id === itemId)
+    )
+  );
+  updateSelectedResultCount();
 
   elements.selectedExecutionLabel.textContent = execution.name;
   elements.executionSummary.innerHTML = `
@@ -876,6 +1174,12 @@ function createExecutionResultRow(item, detail) {
   row.className = `executionResultRow ${selectedExecutionItemId === item.id ? "selected" : ""}`;
   row.type = "button";
   row.innerHTML = `
+    <input
+      class="executionResultCheckbox"
+      type="checkbox"
+      aria-label="Select ${escapeHtml(item.title)}"
+      ${selectedExecutionItemIds.has(item.id) ? "checked" : ""}
+    />
     <span class="caseId">${escapeHtml(item.test_id || "No Test ID")}</span>
     <span class="caseTitle">${escapeHtml(item.title)}</span>
     <span class="priority ${escapeHtml(item.priority || "Medium")}">
@@ -883,11 +1187,26 @@ function createExecutionResultRow(item, detail) {
     </span>
     <span class="status ${item.status}">${item.status}</span>
   `;
+  row.querySelector(".executionResultCheckbox").addEventListener("click", (event) => {
+    event.stopPropagation();
+    if (event.currentTarget.checked) {
+      selectedExecutionItemIds.add(item.id);
+    } else {
+      selectedExecutionItemIds.delete(item.id);
+    }
+    updateSelectedResultCount();
+  });
   row.addEventListener("click", () => {
     selectedExecutionItemId = item.id;
     renderExecutionDetail(detail);
   });
   return row;
+}
+
+function updateSelectedResultCount() {
+  if (elements.selectedResultCount) {
+    elements.selectedResultCount.textContent = `${selectedExecutionItemIds.size} selected`;
+  }
 }
 
 function renderSelectedExecutionItemDetail(item) {
@@ -1054,6 +1373,7 @@ async function selectExecution(executionId) {
   if (selectedExecutionId !== executionId) {
     selectedExecutionItemId = null;
     collapsedExecutionCategories = new Set();
+    selectedExecutionItemIds = new Set();
   }
   selectedExecutionId = executionId;
   const detail = await api(`/executions/${executionId}`);
@@ -1071,6 +1391,27 @@ async function updateExecutionItem(itemId, payload) {
     body: JSON.stringify(payload),
   });
   showToast("Result saved");
+  await loadInitialData();
+}
+
+async function updateExecutionItemsBulk() {
+  const itemIds = Array.from(selectedExecutionItemIds);
+  if (!itemIds.length) {
+    showToast("Select at least one result");
+    return;
+  }
+
+  await api("/execution-items/bulk", {
+    method: "PATCH",
+    body: JSON.stringify({
+      item_ids: itemIds,
+      status: elements.bulkResultStatus.value,
+      actual_result: elements.bulkResultNotes.value,
+    }),
+  });
+  selectedExecutionItemIds = new Set();
+  elements.bulkResultNotes.value = "";
+  showToast(`Updated ${itemIds.length} result(s)`);
   await loadInitialData();
 }
 
@@ -1390,6 +1731,24 @@ if (elements.addCasesButton) {
   });
 }
 
+if (elements.applyBulkResultButton) {
+  elements.applyBulkResultButton.addEventListener("click", async () => {
+    try {
+      await updateExecutionItemsBulk();
+    } catch (error) {
+      showToast(error.message);
+    }
+  });
+}
+
+if (elements.clearBulkSelectionButton) {
+  elements.clearBulkSelectionButton.addEventListener("click", () => {
+    selectedExecutionItemIds = new Set();
+    updateSelectedResultCount();
+    rerenderCurrentExecutionDetail();
+  });
+}
+
 if (elements.selectedExecutionItemForm) {
   elements.selectedExecutionItemForm.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -1420,14 +1779,47 @@ if (elements.clearCaseFiltersButton) {
     renderTestCases();
   });
 }
-if (elements.importCsvButton) {
-  elements.importCsvButton.addEventListener("click", importTestCasesFromCsv);
+if (elements.previewCsvButton) {
+  elements.previewCsvButton.addEventListener("click", previewTestCasesFromCsv);
+}
+if (elements.confirmCsvImportButton) {
+  elements.confirmCsvImportButton.addEventListener("click", async () => {
+    try {
+      await confirmCsvImport();
+    } catch (error) {
+      showToast(error.message);
+    }
+  });
+}
+if (elements.cancelCsvPreviewButton) {
+  elements.cancelCsvPreviewButton.addEventListener("click", clearCsvPreview);
+}
+if (elements.cancelCsvPreviewFooterButton) {
+  elements.cancelCsvPreviewFooterButton.addEventListener("click", clearCsvPreview);
+}
+if (elements.csvPreviewModal) {
+  elements.csvPreviewModal.addEventListener("click", (event) => {
+    if (event.target === elements.csvPreviewModal) {
+      clearCsvPreview();
+    }
+  });
+}
+if (elements.caseCsvFile) {
+  elements.caseCsvFile.addEventListener("change", clearCsvPreview);
 }
 if (elements.downloadCsvTemplateButton) {
   elements.downloadCsvTemplateButton.addEventListener("click", downloadCsvTemplate);
 }
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && elements.csvPreviewModal && !elements.csvPreviewModal.hidden) {
+    clearCsvPreview();
+  }
+});
 if (elements.executionCaseSearch) {
   elements.executionCaseSearch.addEventListener("input", renderExecutionCaseChecklist);
+}
+if (elements.executionCaseCategoryFilter) {
+  elements.executionCaseCategoryFilter.addEventListener("change", renderExecutionCaseChecklist);
 }
 if (elements.executionSearch) {
   elements.executionSearch.addEventListener("input", renderExecutions);

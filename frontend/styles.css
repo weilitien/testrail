@@ -112,7 +112,7 @@ h2 {
 }
 
 .caseManagementWorkspace {
-  grid-template-columns: 250px minmax(420px, 1fr) minmax(320px, 430px);
+  grid-template-columns: minmax(360px, 460px) minmax(0, 1fr);
 }
 
 .executionPageWorkspace {
@@ -155,7 +155,7 @@ h2 {
   top: 78px;
 }
 
-.caseListPane {
+.caseNavigatorPane {
   min-width: 0;
 }
 
@@ -390,6 +390,24 @@ button.dangerText:hover {
   background: #eef7fa;
 }
 
+.bulkResultBar {
+  display: grid;
+  grid-template-columns: auto 150px minmax(220px, 1fr) auto auto;
+  gap: 12px;
+  align-items: end;
+  margin-bottom: 16px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff9f5;
+}
+
+.bulkResultBar > span {
+  align-self: center;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
 .caseToolbar {
   display: grid;
   grid-template-columns: minmax(240px, 1fr) 180px auto;
@@ -402,9 +420,17 @@ button.dangerText:hover {
   background: #eef7fa;
 }
 
+.caseNavigatorPane .caseToolbar {
+  grid-template-columns: 1fr;
+}
+
+.caseNavigatorPane .caseToolbar button {
+  width: 100%;
+}
+
 .categoryTree {
   display: grid;
-  gap: 6px;
+  gap: 8px;
 }
 
 .categoryForm {
@@ -428,12 +454,14 @@ button.dangerText:hover {
 
 .categoryRow {
   display: grid;
-  gap: 3px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px;
+  align-items: center;
 }
 
 .treeItem {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   gap: 8px;
   align-items: center;
   width: 100%;
@@ -446,6 +474,11 @@ button.dangerText:hover {
   font-weight: 700;
 }
 
+.treeItem span:not(.categoryToggle) {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
 .treeItem:hover,
 .categoryRow.active .treeItem {
   border-color: var(--line);
@@ -454,9 +487,16 @@ button.dangerText:hover {
 
 .categoryActions {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   justify-content: flex-end;
-  padding: 2px 4px 8px;
+  padding: 0;
+}
+
+.categoryActions .iconButton {
+  min-height: 24px;
+  padding: 4px 9px;
+  font-size: 11px;
+  box-shadow: none;
 }
 
 .treeItem strong {
@@ -469,36 +509,76 @@ button.dangerText:hover {
   font-size: 12px;
 }
 
-.caseTableRow {
+.treeItem .categoryToggle {
+  width: 20px;
+  height: 20px;
+}
+
+.treeItem.noToggle {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.caseCategoryGroup {
   display: grid;
-  grid-template-columns: 120px minmax(220px, 1fr) 150px 100px;
-  gap: 12px;
+  gap: 6px;
+}
+
+.caseTreeItems {
+  display: grid;
+  gap: 6px;
+  padding-left: 18px;
+}
+
+.caseTreeItem {
+  display: grid;
+  grid-template-columns: minmax(84px, 0.8fr) minmax(0, 1.4fr) auto;
+  gap: 8px;
   align-items: center;
   width: 100%;
   border: 1px solid var(--line);
   border-radius: 8px;
-  padding: 12px;
+  padding: 9px 10px;
   background: var(--panel-soft);
   color: var(--text);
   text-align: left;
-  font-weight: 400;
   box-shadow: none;
 }
 
-.caseTableRow:hover,
-.caseTableRow.selected {
+.caseTreeItem:hover,
+.caseTreeItem.selected {
   border-color: var(--accent);
   background: #fff9f5;
 }
 
-.caseTableRow span {
+.caseTreeItem .caseId,
+.caseTreeItem strong {
   min-width: 0;
   overflow-wrap: anywhere;
 }
 
-.caseTableRow .caseId,
-.caseTableRow .caseTitle {
-  font-weight: 700;
+.caseTreeItem .caseId {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.caseTreeItem strong {
+  font-size: 13px;
+  line-height: 1.25;
+}
+
+.caseTreeItem .priority {
+  min-width: 0;
+  padding: 4px 8px;
+  font-size: 11px;
+}
+
+.treeEmptyState {
+  margin: 6px 2px 0;
+  padding: 10px;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  background: var(--panel-soft);
 }
 
 .caseDetailBody {
@@ -844,10 +924,10 @@ button.dangerText:hover {
 
 .executionResultRow {
   display: grid;
-  grid-template-columns: minmax(90px, 120px) minmax(0, 1fr) auto;
+  grid-template-columns: 22px minmax(90px, 120px) minmax(0, 1fr) auto;
   grid-template-areas:
-    "case-id case-title case-title"
-    "case-id priority status";
+    "select case-id case-title case-title"
+    "select case-id priority status";
   gap: 6px 12px;
   align-items: start;
   width: 100%;
@@ -858,6 +938,14 @@ button.dangerText:hover {
   color: var(--text);
   text-align: left;
   font-weight: 400;
+}
+
+.executionResultCheckbox {
+  grid-area: select;
+  align-self: center;
+  width: 18px;
+  height: 18px;
+  margin: 0;
 }
 
 .executionResultRow:hover,
@@ -944,6 +1032,136 @@ button.dangerText:hover {
   justify-self: start;
 }
 
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgb(17 19 24 / 52%);
+}
+
+.modalDialog {
+  width: min(960px, 100%);
+  max-height: min(760px, calc(100vh - 48px));
+  overflow: auto;
+  border-radius: 10px;
+  padding: 18px;
+  background: #ffffff;
+  box-shadow: 0 24px 80px rgb(17 19 24 / 28%);
+}
+
+.modalHeader {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.modalHeader h2,
+.modalHeader p {
+  margin-bottom: 0;
+}
+
+.csvPreviewDialog {
+  display: grid;
+  gap: 14px;
+}
+
+.csvPreviewPanel {
+  display: grid;
+  gap: 12px;
+  overflow-x: auto;
+}
+
+.modalActions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  border-top: 1px solid var(--line);
+  padding-top: 14px;
+}
+
+.previewSummary {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.previewSummary strong,
+.previewSummary span {
+  border-radius: 999px;
+  padding: 4px 9px;
+  background: #ffffff;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.previewMessages {
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.previewMessages.error {
+  background: #ffe3dd;
+  color: #8f1f12;
+}
+
+.previewMessages.warning {
+  background: #fff5c2;
+  color: #6f4c00;
+}
+
+.previewMessages strong {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.previewMessages ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.previewTable {
+  display: grid;
+  min-width: 720px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.previewTableHeader,
+.previewTableRow {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr) 120px 90px;
+}
+
+.previewTableHeader {
+  background: #f4fafc;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.previewTableHeader span,
+.previewTableRow span {
+  min-width: 0;
+  border-top: 1px solid var(--line);
+  padding: 8px;
+  overflow-wrap: anywhere;
+}
+
+.previewTableHeader span {
+  border-top: 0;
+}
+
 .checklist {
   display: grid;
   gap: 8px;
@@ -953,6 +1171,46 @@ button.dangerText:hover {
   border-radius: 8px;
   padding: 10px;
   background: #eef7fa;
+}
+
+.checklistCategoryGroup {
+  display: grid;
+  gap: 8px;
+}
+
+.checklistCategoryHeader {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: #ffffff;
+}
+
+.checklistCategoryHeader strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.checklistCategoryHeader > span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.checklistCategoryActions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.checklistCategoryItems {
+  display: grid;
+  gap: 8px;
 }
 
 .checkboxRow {
@@ -1123,7 +1381,7 @@ button.dangerText:hover {
 
 @media (max-width: 1180px) {
   .caseManagementWorkspace {
-    grid-template-columns: 240px minmax(0, 1fr);
+    grid-template-columns: minmax(320px, 380px) minmax(0, 1fr);
   }
 
   .executionManagementWorkspace {
@@ -1132,12 +1390,6 @@ button.dangerText:hover {
 
   .executionManagementWorkspace.creatorCollapsed {
     grid-template-columns: 260px minmax(0, 1fr);
-  }
-
-  .caseDetailPane {
-    grid-column: 1 / -1;
-    position: static;
-    max-height: none;
   }
 
   .executionCreatorPane {
@@ -1155,12 +1407,12 @@ button.dangerText:hover {
     position: static;
   }
 
-  .caseTableRow {
-    grid-template-columns: 110px minmax(180px, 1fr) 100px;
+  .caseTreeItem {
+    grid-template-columns: minmax(72px, 0.7fr) minmax(0, 1.3fr);
   }
 
-  .caseTableRow span:nth-child(3) {
-    display: none;
+  .caseTreeItem .priority {
+    grid-column: 2;
   }
 
   .stepEditorRow {
@@ -1192,6 +1444,7 @@ button.dangerText:hover {
   .caseToolbar,
   .executionToolbar,
   .detailFilters,
+  .bulkResultBar,
   .executionWorkspace,
   .summaryGrid,
   .chartPanel {
@@ -1210,9 +1463,17 @@ button.dangerText:hover {
     max-height: none;
   }
 
-  .caseTableRow {
+  .caseTreeItems {
+    padding-left: 10px;
+  }
+
+  .caseTreeItem {
     grid-template-columns: 1fr;
     gap: 6px;
+  }
+
+  .caseTreeItem .priority {
+    grid-column: auto;
   }
 
   .stepsTableHeader {
@@ -1227,7 +1488,43 @@ button.dangerText:hover {
     background: #eef7fa;
   }
 
+  .previewTableHeader {
+    display: none;
+  }
+
+  .modalOverlay {
+    align-items: stretch;
+    padding: 12px;
+  }
+
+  .modalDialog {
+    max-height: calc(100vh - 24px);
+  }
+
+  .modalHeader,
+  .modalActions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .previewTable {
+    min-width: 0;
+  }
+
+  .previewTableRow {
+    grid-template-columns: 1fr;
+  }
+
   .statusMiniSummary {
+    justify-content: flex-start;
+  }
+
+  .checklistCategoryHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .checklistCategoryActions {
     justify-content: flex-start;
   }
 
@@ -1239,6 +1536,7 @@ button.dangerText:hover {
   .executionResultRow {
     grid-template-columns: 1fr;
     grid-template-areas:
+      "select"
       "case-id"
       "case-title"
       "priority"

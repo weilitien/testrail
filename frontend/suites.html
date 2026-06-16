@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mini TestRail - Test Suites</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <img class="brandIcon" src="assets/app-icon.jpg" alt="Mini TestRail icon" />
+        <div>
+          <h1>Mini TestRail</h1>
+          <p>Manage test cases, suites, executions, results, and history.</p>
+        </div>
+      </div>
+      <nav class="topnav">
+        <a href="index.html">Test Cases</a>
+        <a class="active" href="suites.html">Test Suites</a>
+        <a href="executions.html">Executions</a>
+        <button id="refreshButton" type="button">Refresh</button>
+      </nav>
+    </header>
+
+    <main class="suiteWorkspace">
+      <aside class="panel suiteNavigatorPane">
+        <div class="sectionHeader">
+          <h2>Test Suites</h2>
+          <span id="suiteCount" class="muted"></span>
+        </div>
+        <div class="executionToolbar">
+          <label>
+            Search
+            <input id="suiteSearch" placeholder="Suite name or description" />
+          </label>
+          <button id="clearSuiteSearchButton" class="secondary" type="button">
+            Clear
+          </button>
+        </div>
+        <div id="suiteList" class="suiteNavList"></div>
+      </aside>
+
+      <section class="panel suiteDetailPane">
+        <div id="suiteDetailEmpty" class="emptyState">
+          <h2>Create a Test Suite</h2>
+          <p class="muted">
+            Build a reusable group of test cases, such as Smoke, Regression, or
+            Release Verification.
+          </p>
+        </div>
+
+        <div id="suiteDetailContent" hidden>
+          <div class="sectionHeader">
+            <h2 id="selectedSuiteTitle">Test Suite Detail</h2>
+            <span id="selectedSuiteMeta" class="muted"></span>
+          </div>
+          <div id="suiteCaseList" class="suiteCaseList"></div>
+        </div>
+
+        <div class="caseFormPanel suiteFormPanel">
+          <h2 id="suiteFormTitle">Create Test Suite</h2>
+          <form id="suiteForm">
+            <div class="formGrid">
+              <label>
+                Name
+                <input id="suiteName" required placeholder="Smoke Test Suite" />
+              </label>
+              <label>
+                Description
+                <input id="suiteDescription" placeholder="Core tests for every release" />
+              </label>
+            </div>
+
+            <div class="suiteCasePicker">
+              <div class="formSectionHeader">
+                <h3>Test Cases</h3>
+                <span id="selectedSuiteCaseCount" class="muted">0 selected</span>
+              </div>
+              <div class="addCaseFilters">
+                <label>
+                  Search Test Cases
+                  <input id="suiteCaseSearch" placeholder="Test ID, title, category" />
+                </label>
+                <label>
+                  Category
+                  <select id="suiteCaseCategoryFilter">
+                    <option value="">All categories</option>
+                  </select>
+                </label>
+              </div>
+              <div id="suiteCaseChecklist" class="checklist"></div>
+            </div>
+
+            <div class="formActions">
+              <button id="suiteSubmitButton" type="submit">Create Suite</button>
+              <button id="cancelSuiteEditButton" class="secondary" type="button">
+                New Suite
+              </button>
+              <button id="deleteSuiteButton" class="danger" type="button" hidden>
+                Delete Suite
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
+    </main>
+
+    <div id="toast" class="toast" hidden></div>
+    <script src="env.js"></script>
+    <script type="module" src="app.js"></script>
+  </body>
+</html>

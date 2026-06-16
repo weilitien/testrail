@@ -1,407 +1,36 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone
 import os
-import sqlite3
-import re
-from typing import Literal
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
-from sqlalchemy import create_engine, text
 
-
-# Use DATABASE_URL for PostgreSQL. If it is not set, fall back to SQLite for
-# simple manual local development.
-DATABASE_URL = os.getenv("DATABASE_URL", "")
-DB_PATH = os.getenv("DATABASE_PATH", "testrail.db")
-engine = create_engine(DATABASE_URL, future=True) if DATABASE_URL else None
-
-Status = Literal["NOT_RUN", "PASS", "FAIL", "BLOCKED", "SKIPPED"]
-
-
-def now_iso() -> str:
-    """Return a UTC timestamp that is easy to store and display."""
-    return datetime.now(timezone.utc).isoformat()
-
-
-class DbResult:
-    def __init__(self, result, lastrowid=None):
-        self.result = result
-        self.lastrowid = lastrowid
-        self.rowcount = result.rowcount
-
-    def fetchone(self):
-        row = self.result.mappings().fetchone()
-        return dict(row) if row else None
-
-    def fetchall(self):
-        return [dict(row) for row in self.result.mappings().fetchall()]
-
-
-class PostgresConnection:
-    def __init__(self):
-        self.context = None
-        self.conn = None
-        self.dialect = "postgresql"
-
-    def __enter__(self):
-        self.context = engine.begin()
-        self.conn = self.context.__enter__()
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        return self.context.__exit__(exc_type, exc_value, traceback)
-
-    def execute(self, sql: str, params=()):
-        converted_sql, converted_params = convert_sqlite_query(sql, params)
-        result = self.conn.execute(text(converted_sql), converted_params)
-        lastrowid = None
-        if converted_sql.lstrip().upper().startswith("INSERT") and result.returns_rows:
-            inserted = result.mappings().fetchone()
-            if inserted and "id" in inserted:
-                lastrowid = inserted["id"]
-        return DbResult(result, lastrowid)
-
-    def executescript(self, script: str) -> None:
-        for statement in script.split(";"):
-            statement = statement.strip()
-            if statement:
-                self.conn.execute(text(statement))
-
-
-def convert_sqlite_query(sql: str, params) -> tuple[str, dict]:
-    sql = sql.strip()
-    sql = re.sub(r"\bINSERT\s+OR\s+IGNORE\b", "INSERT", sql, flags=re.IGNORECASE)
-
-    insert_needs_returning = (
-        sql.upper().startswith("INSERT")
-        and " RETURNING " not in sql.upper()
-        and "ON CONFLICT" not in sql.upper()
-    )
-    if insert_needs_returning:
-        sql = f"{sql} RETURNING id"
-
-    if isinstance(params, dict):
-        return sql, params
-
-    values = list(params or [])
-    converted_params = {}
-    for index, value in enumerate(values):
-        placeholder = f"p{index}"
-        sql = sql.replace("?", f":{placeholder}", 1)
-        converted_params[placeholder] = value
-    return sql, converted_params
-
-
-def get_db():
-    """Create a SQLite connection with dictionary-like rows."""
-    if engine:
-        return PostgresConnection()
-
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA foreign_keys = ON")
-    return conn
-
-
-def row_to_dict(row) -> dict:
-    return dict(row)
-
-
-def reset_legacy_category_schema(conn: sqlite3.Connection) -> None:
-    """Clear old local data when the app finds the retired feature columns."""
-    if engine:
-        return
-
-    existing_table = conn.execute(
-        "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'test_cases'"
-    ).fetchone()
-    if not existing_table:
-        return
-
-    columns = conn.execute("PRAGMA table_info(test_cases)").fetchall()
-    column_names = {column["name"] for column in columns}
-    if "feature" not in column_names and "sub_feature" not in column_names:
-        return
-
-    conn.executescript(
-        """
-        DROP TABLE IF EXISTS execution_history;
-        DROP TABLE IF EXISTS execution_items;
-        DROP TABLE IF EXISTS executions;
-        DROP TABLE IF EXISTS test_case_steps;
-        DROP TABLE IF EXISTS test_cases;
-        DROP TABLE IF EXISTS categories;
-        """
-    )
-
-
-def init_db() -> None:
-    """Create tables if this is the first run of the app."""
-    with get_db() as conn:
-        reset_legacy_category_schema(conn)
-        if engine:
-            schema = """
-            CREATE TABLE IF NOT EXISTS categories (
-                id SERIAL PRIMARY KEY,
-                name TEXT NOT NULL UNIQUE,
-                created_at TEXT NOT NULL
-            );
-
-            CREATE TABLE IF NOT EXISTS test_cases (
-                id SERIAL PRIMARY KEY,
-                test_id TEXT NOT NULL DEFAULT '',
-                category TEXT NOT NULL DEFAULT '',
-                title TEXT NOT NULL,
-                priority TEXT NOT NULL DEFAULT 'Medium',
-                steps TEXT NOT NULL DEFAULT '',
-                expected_result TEXT NOT NULL DEFAULT '',
-                test_data TEXT NOT NULL DEFAULT '',
-                created_at TEXT NOT NULL
-            );
-
-            CREATE TABLE IF NOT EXISTS test_case_steps (
-                id SERIAL PRIMARY KEY,
-                test_case_id INTEGER NOT NULL REFERENCES test_cases(id) ON DELETE CASCADE,
-                step_order INTEGER NOT NULL,
-                step_text TEXT NOT NULL DEFAULT '',
-                expected_result TEXT NOT NULL DEFAULT ''
-            );
-
-            CREATE TABLE IF NOT EXISTS executions (
-                id SERIAL PRIMARY KEY,
-                name TEXT NOT NULL,
-                description TEXT NOT NULL DEFAULT '',
-                created_at TEXT NOT NULL
-            );
-
-            CREATE TABLE IF NOT EXISTS execution_items (
-                id SERIAL PRIMARY KEY,
-                execution_id INTEGER NOT NULL REFERENCES executions(id) ON DELETE CASCADE,
-                test_case_id INTEGER NOT NULL REFERENCES test_cases(id) ON DELETE CASCADE,
-                status TEXT NOT NULL DEFAULT 'NOT_RUN',
-                actual_result TEXT NOT NULL DEFAULT '',
-                created_at TEXT NOT NULL,
-                updated_at TEXT NOT NULL,
-                UNIQUE (execution_id, test_case_id)
-            );
-
-            CREATE TABLE IF NOT EXISTS execution_history (
-                id SERIAL PRIMARY KEY,
-                execution_item_id INTEGER NOT NULL REFERENCES execution_items(id) ON DELETE CASCADE,
-                execution_id INTEGER NOT NULL REFERENCES executions(id) ON DELETE CASCADE,
-                test_case_id INTEGER NOT NULL REFERENCES test_cases(id) ON DELETE CASCADE,
-                status TEXT NOT NULL,
-                actual_result TEXT NOT NULL DEFAULT '',
-                changed_at TEXT NOT NULL
-            );
-            """
-        else:
-            schema = """
-            CREATE TABLE IF NOT EXISTS categories (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL UNIQUE,
-                created_at TEXT NOT NULL
-            );
-
-            CREATE TABLE IF NOT EXISTS test_cases (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                test_id TEXT NOT NULL DEFAULT '',
-                category TEXT NOT NULL DEFAULT '',
-                title TEXT NOT NULL,
-                priority TEXT NOT NULL DEFAULT 'Medium',
-                steps TEXT NOT NULL DEFAULT '',
-                expected_result TEXT NOT NULL DEFAULT '',
-                test_data TEXT NOT NULL DEFAULT '',
-                created_at TEXT NOT NULL
-            );
-
-            CREATE TABLE IF NOT EXISTS test_case_steps (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                test_case_id INTEGER NOT NULL,
-                step_order INTEGER NOT NULL,
-                step_text TEXT NOT NULL DEFAULT '',
-                expected_result TEXT NOT NULL DEFAULT '',
-                FOREIGN KEY (test_case_id) REFERENCES test_cases(id) ON DELETE CASCADE
-            );
-
-            CREATE TABLE IF NOT EXISTS executions (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                description TEXT NOT NULL DEFAULT '',
-                created_at TEXT NOT NULL
-            );
-
-            CREATE TABLE IF NOT EXISTS execution_items (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                execution_id INTEGER NOT NULL,
-                test_case_id INTEGER NOT NULL,
-                status TEXT NOT NULL DEFAULT 'NOT_RUN',
-                actual_result TEXT NOT NULL DEFAULT '',
-                created_at TEXT NOT NULL,
-                updated_at TEXT NOT NULL,
-                FOREIGN KEY (execution_id) REFERENCES executions(id) ON DELETE CASCADE,
-                FOREIGN KEY (test_case_id) REFERENCES test_cases(id) ON DELETE CASCADE,
-                UNIQUE (execution_id, test_case_id)
-            );
-
-            CREATE TABLE IF NOT EXISTS execution_history (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                execution_item_id INTEGER NOT NULL,
-                execution_id INTEGER NOT NULL,
-                test_case_id INTEGER NOT NULL,
-                status TEXT NOT NULL,
-                actual_result TEXT NOT NULL DEFAULT '',
-                changed_at TEXT NOT NULL,
-                FOREIGN KEY (execution_item_id) REFERENCES execution_items(id) ON DELETE CASCADE,
-                FOREIGN KEY (execution_id) REFERENCES executions(id) ON DELETE CASCADE,
-                FOREIGN KEY (test_case_id) REFERENCES test_cases(id) ON DELETE CASCADE
-            );
-            """
-        conn.executescript(schema)
-        sync_categories_from_test_cases(conn)
-        sync_steps_from_legacy_fields(conn)
-
-
-def normalize_category_name(name: str) -> str:
-    """Keep category names consistent before saving them."""
-    return " ".join(name.strip().split())
-
-
-def ensure_category(conn: sqlite3.Connection, name: str) -> None:
-    """Create a category if the user typed a new one in a test case form."""
-    category_name = normalize_category_name(name)
-    if not category_name:
-        return
-
-    existing = conn.execute(
-        "SELECT id FROM categories WHERE lower(name) = lower(?)",
-        (category_name,),
-    ).fetchone()
-    if existing:
-        return
-
-    conn.execute(
-        "INSERT INTO categories (name, created_at) VALUES (?, ?)",
-        (category_name, now_iso()),
-    )
-
-
-def sync_categories_from_test_cases(conn: sqlite3.Connection) -> None:
-    """Backfill category records from existing test cases."""
-    rows = conn.execute(
-        """
-        SELECT DISTINCT category
-        FROM test_cases
-        WHERE trim(category) != ''
-        """
-    ).fetchall()
-    for row in rows:
-        ensure_category(conn, row["category"])
-
-
-def sync_steps_from_legacy_fields(conn: sqlite3.Connection) -> None:
-    """Create one structured step for old test cases that only used text fields."""
-    rows = conn.execute(
-        """
-        SELECT id, steps, expected_result
-        FROM test_cases
-        WHERE trim(steps) != '' OR trim(expected_result) != ''
-        """
-    ).fetchall()
-    for row in rows:
-        existing_step = conn.execute(
-            "SELECT id FROM test_case_steps WHERE test_case_id = ? LIMIT 1",
-            (row["id"],),
-        ).fetchone()
-        if existing_step:
-            continue
-
-        replace_test_case_steps(
-            conn,
-            row["id"],
-            [
-                {
-                    "step_text": row["steps"],
-                    "expected_result": row["expected_result"],
-                }
-            ],
-        )
-
-
-def normalize_case_steps(payload: TestCaseCreate) -> list[dict]:
-    """Prefer structured steps, but support the older textarea fields."""
-    step_rows = [
-        {
-            "step_text": step.step_text.strip(),
-            "expected_result": step.expected_result.strip(),
-        }
-        for step in payload.case_steps
-        if step.step_text.strip() or step.expected_result.strip()
-    ]
-    if step_rows:
-        return step_rows
-
-    if payload.steps.strip() or payload.expected_result.strip():
-        return [
-            {
-                "step_text": payload.steps.strip(),
-                "expected_result": payload.expected_result.strip(),
-            }
-        ]
-
-    return []
-
-
-def steps_to_legacy_text(case_steps: list[dict]) -> tuple[str, str]:
-    """Store readable text summaries for older CSV/API clients."""
-    steps = "\n".join(step["step_text"] for step in case_steps if step["step_text"])
-    expected = "\n".join(
-        step["expected_result"] for step in case_steps if step["expected_result"]
-    )
-    return steps, expected
-
-
-def replace_test_case_steps(
-    conn: sqlite3.Connection, test_case_id: int, case_steps: list[dict]
-) -> None:
-    conn.execute("DELETE FROM test_case_steps WHERE test_case_id = ?", (test_case_id,))
-    for index, step in enumerate(case_steps, start=1):
-        conn.execute(
-            """
-            INSERT INTO test_case_steps
-                (test_case_id, step_order, step_text, expected_result)
-            VALUES (?, ?, ?, ?)
-            """,
-            (
-                test_case_id,
-                index,
-                step["step_text"],
-                step["expected_result"],
-            ),
-        )
-
-
-def get_test_case_steps(conn: sqlite3.Connection, test_case_id: int) -> list[dict]:
-    rows = conn.execute(
-        """
-        SELECT id, test_case_id, step_order, step_text, expected_result
-        FROM test_case_steps
-        WHERE test_case_id = ?
-        ORDER BY step_order, id
-        """,
-        (test_case_id,),
-    ).fetchall()
-    return [row_to_dict(row) for row in rows]
-
-
-def attach_steps_to_test_case(conn: sqlite3.Connection, row: sqlite3.Row) -> dict:
-    data = row_to_dict(row)
-    data["case_steps"] = get_test_case_steps(conn, data["id"])
-    return data
+from database import get_db, now_iso, row_to_dict
+from schemas import (
+    AddCasesRequest,
+    CategoryCreate,
+    ExecutionCreate,
+    ExecutionItemUpdate,
+    ExecutionItemsBulkUpdate,
+    TestCaseBulkCreate,
+    TestCaseCreate,
+    TestSuiteCreate,
+    TestSuiteUpdate,
+)
+from services import (
+    attach_steps_to_test_case,
+    ensure_category,
+    find_missing_execution_item_ids,
+    find_missing_test_case_ids,
+    get_test_case_steps,
+    init_db,
+    normalize_case_steps,
+    normalize_category_name,
+    replace_test_case_steps,
+    steps_to_legacy_text,
+    update_execution_item_result,
+)
 
 
 @asynccontextmanager
@@ -422,51 +51,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-class TestCaseStepCreate(BaseModel):
-    step_text: str = ""
-    expected_result: str = ""
-
-
-class TestCaseCreate(BaseModel):
-    test_id: str = ""
-    category: str = ""
-    title: str = Field(..., min_length=1)
-    priority: str = "Medium"
-    steps: str = ""
-    expected_result: str = ""
-    case_steps: list[TestCaseStepCreate] = Field(default_factory=list)
-    test_data: str = ""
-
-
-class CategoryCreate(BaseModel):
-    name: str = Field(..., min_length=1)
-
-
-class TestCaseBulkCreate(BaseModel):
-    test_cases: list[TestCaseCreate] = Field(..., min_length=1)
-
-
-class ExecutionCreate(BaseModel):
-    name: str = Field(..., min_length=1)
-    description: str = ""
-    test_case_ids: list[int] = []
-
-
-class AddCasesRequest(BaseModel):
-    test_case_ids: list[int] = Field(..., min_length=1)
-
-
-class ExecutionItemUpdate(BaseModel):
-    status: Status
-    actual_result: str = ""
-
-
-class ExecutionItemsBulkUpdate(BaseModel):
-    item_ids: list[int] = Field(..., min_length=1)
-    status: Status
-    actual_result: str = ""
 
 
 @app.get("/")
@@ -809,6 +393,176 @@ def delete_test_case(test_case_id: int):
     return {"message": "Test case deleted", "id": test_case_id}
 
 
+@app.get("/test-suites")
+def list_test_suites():
+    with get_db() as conn:
+        rows = conn.execute(
+            """
+            SELECT
+                s.id,
+                s.name,
+                s.description,
+                s.created_at,
+                s.updated_at,
+                COUNT(sc.id) AS total_cases
+            FROM test_suites s
+            LEFT JOIN test_suite_cases sc ON sc.suite_id = s.id
+            GROUP BY s.id, s.name, s.description, s.created_at, s.updated_at
+            ORDER BY s.id DESC
+            """
+        ).fetchall()
+
+    return [row_to_dict(row) for row in rows]
+
+
+@app.post("/test-suites", status_code=201)
+def create_test_suite(payload: TestSuiteCreate):
+    timestamp = now_iso()
+    suite_name = payload.name.strip()
+    if not suite_name:
+        raise HTTPException(status_code=400, detail="Suite name is required")
+
+    test_case_ids = list(dict.fromkeys(payload.test_case_ids))
+    with get_db() as conn:
+        existing_suite = conn.execute(
+            "SELECT id FROM test_suites WHERE lower(name) = lower(?)",
+            (suite_name,),
+        ).fetchone()
+        if existing_suite:
+            raise HTTPException(status_code=409, detail="Suite name already exists")
+
+        missing_ids = find_missing_test_case_ids(conn, test_case_ids)
+        if missing_ids:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Test case IDs not found: {missing_ids}",
+            )
+
+        cursor = conn.execute(
+            """
+            INSERT INTO test_suites (name, description, created_at, updated_at)
+            VALUES (?, ?, ?, ?)
+            """,
+            (suite_name, payload.description, timestamp, timestamp),
+        )
+        suite_id = cursor.lastrowid
+        replace_test_suite_cases(conn, suite_id, test_case_ids, timestamp)
+
+    return get_test_suite_detail(suite_id)
+
+
+@app.get("/test-suites/{suite_id}")
+def get_test_suite(suite_id: int):
+    return get_test_suite_detail(suite_id)
+
+
+@app.put("/test-suites/{suite_id}")
+def update_test_suite(suite_id: int, payload: TestSuiteUpdate):
+    timestamp = now_iso()
+    suite_name = payload.name.strip()
+    if not suite_name:
+        raise HTTPException(status_code=400, detail="Suite name is required")
+
+    test_case_ids = list(dict.fromkeys(payload.test_case_ids))
+    with get_db() as conn:
+        suite = conn.execute(
+            "SELECT id FROM test_suites WHERE id = ?",
+            (suite_id,),
+        ).fetchone()
+        if not suite:
+            raise HTTPException(status_code=404, detail="Test suite not found")
+
+        duplicate = conn.execute(
+            """
+            SELECT id FROM test_suites
+            WHERE lower(name) = lower(?) AND id != ?
+            """,
+            (suite_name, suite_id),
+        ).fetchone()
+        if duplicate:
+            raise HTTPException(status_code=409, detail="Suite name already exists")
+
+        missing_ids = find_missing_test_case_ids(conn, test_case_ids)
+        if missing_ids:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Test case IDs not found: {missing_ids}",
+            )
+
+        conn.execute(
+            """
+            UPDATE test_suites
+            SET name = ?, description = ?, updated_at = ?
+            WHERE id = ?
+            """,
+            (suite_name, payload.description, timestamp, suite_id),
+        )
+        replace_test_suite_cases(conn, suite_id, test_case_ids, timestamp)
+
+    return get_test_suite_detail(suite_id)
+
+
+@app.delete("/test-suites/{suite_id}")
+def delete_test_suite(suite_id: int):
+    with get_db() as conn:
+        suite = conn.execute(
+            "SELECT id FROM test_suites WHERE id = ?",
+            (suite_id,),
+        ).fetchone()
+        if not suite:
+            raise HTTPException(status_code=404, detail="Test suite not found")
+
+        conn.execute("DELETE FROM test_suites WHERE id = ?", (suite_id,))
+
+    return {"message": "Test suite deleted", "id": suite_id}
+
+
+def replace_test_suite_cases(
+    conn,
+    suite_id: int,
+    test_case_ids: list[int],
+    timestamp: str,
+) -> None:
+    conn.execute("DELETE FROM test_suite_cases WHERE suite_id = ?", (suite_id,))
+    for position, test_case_id in enumerate(test_case_ids, start=1):
+        conn.execute(
+            """
+            INSERT INTO test_suite_cases
+                (suite_id, test_case_id, position, created_at)
+            VALUES (?, ?, ?, ?)
+            """,
+            (suite_id, test_case_id, position, timestamp),
+        )
+
+
+def get_test_suite_detail(suite_id: int):
+    with get_db() as conn:
+        suite = conn.execute(
+            "SELECT * FROM test_suites WHERE id = ?",
+            (suite_id,),
+        ).fetchone()
+        if not suite:
+            raise HTTPException(status_code=404, detail="Test suite not found")
+
+        rows = conn.execute(
+            """
+            SELECT tc.*
+            FROM test_suite_cases sc
+            JOIN test_cases tc ON tc.id = sc.test_case_id
+            WHERE sc.suite_id = ?
+            ORDER BY sc.position, sc.id
+            """,
+            (suite_id,),
+        ).fetchall()
+        cases = [attach_steps_to_test_case(conn, row) for row in rows]
+
+    return {
+        "suite": row_to_dict(suite),
+        "test_cases": cases,
+        "total_cases": len(cases),
+    }
+
+
 @app.post("/executions", status_code=201)
 def create_execution(payload: ExecutionCreate):
     created_at = now_iso()
@@ -985,70 +739,6 @@ def add_test_cases_to_execution(execution_id: int, payload: AddCasesRequest):
             added_count += cursor.rowcount
 
     return {"added_count": added_count}
-
-
-def find_missing_test_case_ids(conn: sqlite3.Connection, test_case_ids: list[int]) -> list[int]:
-    """Return IDs that were requested but do not exist in the test_cases table."""
-    if not test_case_ids:
-        return []
-
-    placeholders = ",".join("?" for _ in test_case_ids)
-    found_cases = conn.execute(
-        f"SELECT id FROM test_cases WHERE id IN ({placeholders})",
-        test_case_ids,
-    ).fetchall()
-    found_ids = {row["id"] for row in found_cases}
-    return sorted(set(test_case_ids) - found_ids)
-
-
-def find_missing_execution_item_ids(conn, item_ids: list[int]) -> list[int]:
-    if not item_ids:
-        return []
-
-    placeholders = ",".join("?" for _ in item_ids)
-    found_items = conn.execute(
-        f"SELECT id FROM execution_items WHERE id IN ({placeholders})",
-        item_ids,
-    ).fetchall()
-    found_ids = {row["id"] for row in found_items}
-    return sorted(set(item_ids) - found_ids)
-
-
-def update_execution_item_result(
-    conn, item_id: int, status: Status, actual_result: str, timestamp: str
-):
-    item = conn.execute(
-        "SELECT * FROM execution_items WHERE id = ?", (item_id,)
-    ).fetchone()
-    if not item:
-        return None
-
-    conn.execute(
-        """
-        UPDATE execution_items
-        SET status = ?, actual_result = ?, updated_at = ?
-        WHERE id = ?
-        """,
-        (status, actual_result, timestamp, item_id),
-    )
-    conn.execute(
-        """
-        INSERT INTO execution_history
-            (execution_item_id, execution_id, test_case_id, status, actual_result, changed_at)
-        VALUES (?, ?, ?, ?, ?, ?)
-        """,
-        (
-            item_id,
-            item["execution_id"],
-            item["test_case_id"],
-            status,
-            actual_result,
-            timestamp,
-        ),
-    )
-    return conn.execute(
-        "SELECT * FROM execution_items WHERE id = ?", (item_id,)
-    ).fetchone()
 
 
 @app.patch("/execution-items/bulk")

@@ -17,14 +17,15 @@
       </div>
       <nav class="topnav">
         <a href="index.html">Test Cases</a>
+        <a href="suites.html">Test Suites</a>
         <a class="active" href="executions.html">Executions</a>
         <button id="refreshButton" type="button">Refresh</button>
       </nav>
     </header>
 
-    <main id="executionPageRoot" class="executionPageWorkspace executionManagementWorkspace creatorCollapsed">
+    <main id="executionPageRoot" class="executionPageWorkspace executionManagementWorkspace">
       <aside class="panel executionNavigatorPane">
-        <div class="sectionHeader">
+        <div class="sectionHeader executionNavHeader">
           <h2>Executions</h2>
           <div class="headerActions">
             <span id="executionCount" class="muted"></span>
@@ -46,98 +47,91 @@
       <section id="executionDetailPanel" class="panel executionDetailPane" hidden>
         <div class="sectionHeader">
           <h2>Execution Detail</h2>
-          <span id="selectedExecutionLabel" class="muted">Select an execution</span>
+          <div class="headerActions">
+            <span id="selectedExecutionLabel" class="muted">Select an execution</span>
+            <button id="exportExecutionReportButton" class="secondary" type="button">
+              Export Report
+            </button>
+          </div>
         </div>
 
-        <div class="addCasesBar">
-          <select id="caseSelect" multiple></select>
-          <button id="addCasesButton" type="button">Add Selected Cases</button>
-        </div>
+        <details class="addCasesPanel">
+          <summary>
+            <span>Add Test Cases</span>
+            <small id="selectedAddCaseCount" class="muted">0 selected</small>
+          </summary>
+          <div class="addCasesContent">
+            <div class="addCaseFilters">
+              <label>
+                Search Test Cases
+                <input id="addCaseSearch" placeholder="Test ID, title, category" />
+              </label>
+              <label>
+                Category
+                <select id="addCaseCategoryFilter">
+                  <option value="">All categories</option>
+                </select>
+              </label>
+              <button id="addSelectedCasesButton" type="button">Add Selected Cases</button>
+            </div>
+            <div id="addCaseChecklist" class="checklist"></div>
+          </div>
+        </details>
 
-        <div class="detailFilters">
-          <label>
-            Search
-            <input id="executionItemSearch" placeholder="Test ID, title, category" />
-          </label>
-          <label>
-            Status
-            <select id="executionStatusFilter">
-              <option value="">All statuses</option>
-              <option value="NOT_RUN">NOT_RUN</option>
-              <option value="PASS">PASS</option>
-              <option value="FAIL">FAIL</option>
-              <option value="BLOCKED">BLOCKED</option>
-              <option value="SKIPPED">SKIPPED</option>
-            </select>
-          </label>
-          <label>
-            Priority
-            <select id="executionPriorityFilter">
-              <option value="">All priorities</option>
-              <option value="Critical">Critical</option>
-              <option value="High">High</option>
-              <option value="Medium">Medium</option>
-              <option value="Low">Low</option>
-            </select>
-          </label>
-          <button id="clearExecutionFiltersButton" class="secondary" type="button">
-            Clear Filters
-          </button>
-        </div>
-
-        <div class="bulkResultBar">
-          <span id="selectedResultCount" class="muted">0 selected</span>
-          <label>
-            Bulk Status
-            <select id="bulkResultStatus">
-              <option value="PASS">PASS</option>
-              <option value="FAIL">FAIL</option>
-              <option value="BLOCKED">BLOCKED</option>
-              <option value="SKIPPED">SKIPPED</option>
-              <option value="NOT_RUN">NOT_RUN</option>
-            </select>
-          </label>
-          <label>
-            Notes
-            <input id="bulkResultNotes" placeholder="Optional actual result notes" />
-          </label>
-          <button id="applyBulkResultButton" type="button">Apply</button>
-          <button id="clearBulkSelectionButton" class="secondary" type="button">Clear Selection</button>
-        </div>
+        <details class="bulkResultPanel">
+          <summary>
+            <span>Bulk Update Results</span>
+            <small id="selectedResultCount" class="muted">0 selected</small>
+          </summary>
+          <div class="bulkResultBar">
+            <label>
+              Bulk Status
+              <select id="bulkResultStatus">
+                <option value="PASS">PASS</option>
+                <option value="FAIL">FAIL</option>
+                <option value="BLOCKED">BLOCKED</option>
+                <option value="SKIPPED">SKIPPED</option>
+                <option value="NOT_RUN">NOT_RUN</option>
+              </select>
+            </label>
+            <label>
+              Notes
+              <input id="bulkResultNotes" placeholder="Optional actual result notes" />
+            </label>
+            <button id="applyBulkResultButton" type="button">Apply</button>
+            <button id="clearBulkSelectionButton" class="secondary" type="button">Clear Selection</button>
+          </div>
+        </details>
 
         <div class="executionWorkspace">
-          <aside class="workspacePane runSummaryPane">
-            <h2>Run Summary</h2>
-            <div id="executionSummary" class="summaryGrid"></div>
-          </aside>
-
-          <section class="workspacePane resultPane">
-            <div class="sectionHeader">
-              <h2>Tests & Results</h2>
-            </div>
-            <div id="executionItems" class="items"></div>
-          </section>
-
           <aside class="workspacePane resultDetailPane">
-            <h2 id="selectedExecutionItemTitle">Selected Result</h2>
+            <div class="resultEditorHeader">
+              <div>
+                <span class="muted">Test Result Detail</span>
+                <h2 id="selectedExecutionItemTitle">No Test Result Selected</h2>
+              </div>
+              <div id="selectedExecutionItemMeta" class="resultEditorMeta"></div>
+            </div>
             <div id="selectedExecutionItemBody" class="resultDetailBody">
               <p class="muted">Select a test result to view details and update status.</p>
             </div>
             <form id="selectedExecutionItemForm" class="itemEditor" hidden>
-              <label>
-                Status
-                <select id="selectedExecutionItemStatus" name="status">
-                  <option value="NOT_RUN">NOT_RUN</option>
-                  <option value="PASS">PASS</option>
-                  <option value="FAIL">FAIL</option>
-                  <option value="BLOCKED">BLOCKED</option>
-                  <option value="SKIPPED">SKIPPED</option>
-                </select>
-              </label>
-              <label>
-                Actual Result Notes
-                <textarea id="selectedExecutionItemActualResult" name="actualResult"></textarea>
-              </label>
+              <div class="resultEditorControls">
+                <label>
+                  Status
+                  <select id="selectedExecutionItemStatus" name="status">
+                    <option value="NOT_RUN">NOT_RUN</option>
+                    <option value="PASS">PASS</option>
+                    <option value="FAIL">FAIL</option>
+                    <option value="BLOCKED">BLOCKED</option>
+                    <option value="SKIPPED">SKIPPED</option>
+                  </select>
+                </label>
+                <label>
+                  Actual Result Notes
+                  <textarea id="selectedExecutionItemActualResult" name="actualResult"></textarea>
+                </label>
+              </div>
               <button type="submit">Save Result</button>
             </form>
           </aside>
@@ -145,6 +139,15 @@
           <aside class="workspacePane historyPane">
             <h2>History</h2>
             <div id="historyList" class="history"></div>
+          </aside>
+
+          <aside class="workspacePane runSummaryPane">
+            <button id="showExecutionSummaryButton" class="summaryShortcut" type="button">
+              <span>Run Summary</span>
+              <small id="summaryShortcutMeta" class="muted">
+                Pass rate and status totals
+              </small>
+            </button>
           </aside>
         </div>
       </section>
@@ -154,7 +157,7 @@
         <p class="muted">Choose an execution on the left to update results, review history, and see pass rate.</p>
       </section>
 
-      <aside id="executionCreatorPane" class="panel executionCreatorPane" hidden>
+      <section id="executionCreatorPane" class="panel executionDetailPane executionCreatorPane" hidden>
         <div class="sectionHeader">
           <h2>Create Execution</h2>
           <button id="closeExecutionCreatorButton" class="secondary" type="button">Close</button>
@@ -168,6 +171,17 @@
             Description
             <textarea id="executionDescription" placeholder="Smoke tests for the new release"></textarea>
           </label>
+          <div class="suitePickerPanel">
+            <label>
+              Test Suite
+              <select id="executionSuiteSelect">
+                <option value="">Select a suite</option>
+              </select>
+            </label>
+            <button id="applyExecutionSuiteButton" class="secondary" type="button">
+              Apply Suite
+            </button>
+          </div>
           <label>
             Search Test Cases
             <input id="executionCaseSearch" placeholder="Filter by test case title" />
@@ -185,11 +199,11 @@
           <div id="executionCaseChecklist" class="checklist"></div>
           <button type="submit">Create Execution</button>
         </form>
-      </aside>
+      </section>
     </main>
 
     <div id="toast" class="toast" hidden></div>
     <script src="env.js"></script>
-    <script src="app.js"></script>
+    <script type="module" src="app.js"></script>
   </body>
 </html>

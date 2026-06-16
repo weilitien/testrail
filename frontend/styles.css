@@ -124,11 +124,15 @@ h2 {
 }
 
 .executionManagementWorkspace {
-  grid-template-columns: 290px minmax(0, 1fr) 360px;
+  grid-template-columns: minmax(320px, 360px) minmax(0, 1fr);
 }
 
-.executionManagementWorkspace.creatorCollapsed {
-  grid-template-columns: 290px minmax(0, 1fr);
+.suiteWorkspace {
+  display: grid;
+  grid-template-columns: minmax(300px, 360px) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+  padding: 24px clamp(16px, 4vw, 48px);
 }
 
 .panel {
@@ -145,12 +149,9 @@ h2 {
 
 .caseNavigatorPane,
 .caseDetailPane,
-.executionNavigatorPane {
-  position: sticky;
-  top: 78px;
-}
-
-.executionCreatorPane {
+.executionNavigatorPane,
+.suiteNavigatorPane,
+.suiteDetailPane {
   position: sticky;
   top: 78px;
 }
@@ -162,9 +163,18 @@ h2 {
 .caseNavigatorPane,
 .caseDetailPane,
 .executionNavigatorPane,
-.executionCreatorPane {
+.suiteNavigatorPane,
+.suiteDetailPane {
   max-height: calc(100vh - 102px);
   overflow: auto;
+}
+
+.executionCreatorPane {
+  min-width: 0;
+}
+
+.executionCreatorPane form {
+  max-width: 920px;
 }
 
 form,
@@ -286,7 +296,6 @@ button.dangerText:hover {
 }
 
 .sectionHeader,
-.addCasesBar,
 .listRowHeader {
   display: flex;
   align-items: center;
@@ -300,6 +309,33 @@ button.dangerText:hover {
   justify-content: flex-end;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+.executionNavHeader {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+}
+
+.executionNavHeader h2 {
+  margin-top: 18px;
+}
+
+.executionNavHeader .headerActions {
+  display: grid;
+  grid-template-columns: 1fr;
+  justify-items: end;
+  gap: 10px;
+  min-width: 0;
+}
+
+.executionNavHeader #executionCount {
+  white-space: nowrap;
+}
+
+.executionNavHeader button {
+  grid-column: 1 / -1;
+  width: min(100%, 220px);
 }
 
 .metaLine {
@@ -369,43 +405,52 @@ button.dangerText:hover {
   white-space: pre-wrap;
 }
 
-.addCasesBar {
-  align-items: stretch;
+.addCasesPanel,
+.bulkResultPanel {
   margin-bottom: 16px;
-}
-
-.addCasesBar select {
-  flex: 1;
-}
-
-.detailFilters {
-  display: grid;
-  grid-template-columns: minmax(220px, 1fr) 170px 170px auto;
-  gap: 12px;
-  align-items: end;
-  margin-bottom: 16px;
-  padding: 12px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: #eef7fa;
+  background: #f8fbfc;
+}
+
+.addCasesPanel summary,
+.bulkResultPanel summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.addCasesPanel summary::marker,
+.bulkResultPanel summary::marker {
+  color: var(--muted);
+}
+
+.addCasesContent {
+  display: grid;
+  gap: 12px;
+  border-top: 1px solid var(--line);
+  padding: 12px;
+}
+
+.addCaseFilters {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) 180px auto;
+  gap: 12px;
+  align-items: end;
 }
 
 .bulkResultBar {
   display: grid;
-  grid-template-columns: auto 150px minmax(220px, 1fr) auto auto;
+  grid-template-columns: 160px minmax(220px, 1fr) auto auto;
   gap: 12px;
   align-items: end;
-  margin-bottom: 16px;
   padding: 12px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
+  border-top: 1px solid var(--line);
   background: #fff9f5;
-}
-
-.bulkResultBar > span {
-  align-self: center;
-  font-weight: 800;
-  white-space: nowrap;
 }
 
 .caseToolbar {
@@ -477,6 +522,15 @@ button.dangerText:hover {
 .treeItem span:not(.categoryToggle) {
   min-width: 0;
   overflow-wrap: anywhere;
+}
+
+.treeItem.hasToggle span:not(.categoryToggle) {
+  width: fit-content;
+  max-width: 100%;
+  border-radius: 999px;
+  padding: 5px 11px;
+  background: #eef7fa;
+  color: #25313a;
 }
 
 .treeItem:hover,
@@ -699,7 +753,7 @@ button.dangerText:hover {
 
 .executionToolbar {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) minmax(80px, auto);
   gap: 12px;
   align-items: end;
   margin-bottom: 14px;
@@ -717,12 +771,12 @@ button.dangerText:hover {
 .executionNavItem {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 8px;
+  gap: 6px;
   align-items: stretch;
   border: 1px solid var(--line);
   border-radius: 8px;
-  padding: 8px;
-  background: var(--panel-soft);
+  padding: 9px;
+  background: #ffffff;
 }
 
 .executionNavItem:hover,
@@ -733,9 +787,10 @@ button.dangerText:hover {
 
 .executionNavButton {
   display: grid;
-  gap: 4px;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 5px 9px;
   min-width: 0;
-  padding: 4px;
+  padding: 4px 2px;
   border-radius: 6px;
   background: transparent;
   color: var(--text);
@@ -743,20 +798,146 @@ button.dangerText:hover {
   font-weight: 400;
 }
 
+.executionNavButton strong,
+.executionNavButton .navTypeLabel {
+  grid-column: 2;
+}
+
+.navTypeLabel {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0;
+  line-height: 1;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.navTypeLabel.execution {
+  padding: 3px 8px;
+  background: #111318;
+  color: #ffffff;
+}
+
+.navTypeLabel.suite {
+  padding: 3px 8px;
+  background: #e8f5f8;
+  color: #25313a;
+}
+
+.suiteNavList,
+.suiteCaseList,
+.suiteCaseGroup,
+.suiteCaseItems,
+.suiteCasePicker {
+  display: grid;
+  gap: 10px;
+}
+
+.suitePickerPanel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: end;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  background: #eef7fa;
+}
+
+.suiteNavItem {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px 10px;
+  align-items: center;
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 11px;
+  background: #ffffff;
+  color: var(--text);
+  text-align: left;
+  box-shadow: none;
+}
+
+.suiteNavItem:hover,
+.suiteNavItem.selected {
+  border-color: var(--accent);
+  background: #fff9f5;
+}
+
+.suiteNavItem .navTypeLabel {
+  grid-column: 1 / -1;
+}
+
+.suiteNavItem strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 16px;
+  line-height: 1.2;
+}
+
+.suiteNavItem small {
+  color: var(--muted);
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.suiteFormPanel {
+  margin-top: 18px;
+}
+
+.suiteCaseList {
+  margin-bottom: 18px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--line);
+}
+
+.suiteCaseRow {
+  display: grid;
+  grid-template-columns: minmax(90px, 0.7fr) minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 9px 10px;
+  background: var(--panel-soft);
+}
+
+.suiteCaseRow .caseId,
+.suiteCaseRow strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.suiteCaseRow .caseId {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.suiteCaseRow strong {
+  font-size: 13px;
+}
+
+.executionNavButton strong {
+  color: #111318;
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1.15;
+}
+
 .executionNavButton:hover {
   background: transparent;
 }
 
 .executionNavButton strong,
-.executionNavButton span,
-.executionNavButton small {
+.executionNavButton span {
   min-width: 0;
   overflow-wrap: anywhere;
-}
-
-.executionNavButton small {
-  color: var(--muted);
-  font-weight: 700;
 }
 
 .executionNavActions {
@@ -765,7 +946,109 @@ button.dangerText:hover {
 }
 
 .executionNavActions button {
-  padding: 7px 9px;
+  padding: 6px 9px;
+  font-size: 12px;
+}
+
+.executionNavTree {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 8px;
+  border-top: 1px solid var(--line);
+  margin-top: 4px;
+  padding-top: 10px;
+  padding-left: 10px;
+}
+
+.executionNavTree .muted {
+  margin-bottom: 0;
+  padding: 8px;
+}
+
+.executionNavGroup {
+  display: grid;
+  gap: 6px;
+}
+
+.executionNavGroupHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.executionNavGroupHeader strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.executionNavGroupHeader span {
+  border-radius: 999px;
+  padding: 2px 7px;
+  background: #ffffff;
+  color: var(--muted);
+}
+
+.executionNavGroupItems {
+  display: grid;
+  gap: 6px;
+}
+
+.executionNavResultItem {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  gap: 6px 8px;
+  align-items: center;
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 7px 8px;
+  background: #f8fbfc;
+  color: var(--text);
+  text-align: left;
+  box-shadow: none;
+}
+
+.executionNavResultCheckbox {
+  grid-row: 1 / 3;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+
+.executionNavResultItem:hover,
+.executionNavResultItem.selected {
+  border-color: var(--accent);
+  background: #fff9f5;
+}
+
+.executionNavResultItem .caseId {
+  min-width: 0;
+  color: #65717c;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.executionNavResultItem strong {
+  grid-column: 2 / -1;
+  min-width: 0;
+  color: #2f3942;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.executionNavResultItem .status {
+  font-size: 10px;
+  white-space: nowrap;
+  justify-self: end;
 }
 
 .executionDetailPane {
@@ -774,7 +1057,7 @@ button.dangerText:hover {
 
 .executionWorkspace {
   display: grid;
-  grid-template-columns: 220px minmax(0, 1fr) 300px;
+  grid-template-columns: 1fr;
   gap: 14px;
   align-items: start;
 }
@@ -792,8 +1075,7 @@ button.dangerText:hover {
 }
 
 .runSummaryPane {
-  position: sticky;
-  top: 78px;
+  grid-column: 1 / -1;
 }
 
 .historyPane {
@@ -803,69 +1085,42 @@ button.dangerText:hover {
 .resultDetailPane {
   position: sticky;
   top: 78px;
+  display: grid;
+  gap: 16px;
+  padding: 18px;
 }
 
-.runSummaryPane .summaryGrid {
-  grid-template-columns: 1fr;
-  margin-bottom: 0;
+.summaryShortcut {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
 }
 
-.runSummaryPane .chartPanel {
-  grid-template-columns: 1fr;
-  justify-items: center;
+.summaryShortcut span {
+  font-size: 16px;
+  font-weight: 800;
 }
 
-.runSummaryPane .passRateDonut {
-  width: 124px;
-  height: 124px;
+.summaryShortcut small {
+  text-align: right;
 }
 
-.resultPane .items {
-  max-height: 72vh;
-  overflow: auto;
-  padding-right: 4px;
+.summaryShortcut:hover,
+.summaryShortcut.active {
+  color: var(--accent);
 }
 
 .historyPane .history {
   max-height: 260px;
   overflow: auto;
   padding-right: 4px;
-}
-
-.executionCategoryGroup {
-  display: grid;
-  gap: 8px;
-}
-
-.executionCategoryHeader {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: center;
-  justify-content: flex-start;
-  width: 100%;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 10px 12px;
-  background: #eef7fa;
-  color: var(--text);
-  text-align: left;
-}
-
-.executionCategoryHeader:hover {
-  background: #e4f2f6;
-}
-
-.executionCategoryHeader strong {
-  flex: 1 1 180px;
-  min-width: 120px;
-  overflow-wrap: anywhere;
-}
-
-.executionCategoryHeader > span:not(.categoryToggle):not(.statusMiniSummary) {
-  flex: 0 0 auto;
-  min-width: max-content;
-  white-space: nowrap;
 }
 
 .categoryToggle {
@@ -880,120 +1135,54 @@ button.dangerText:hover {
   font-weight: 900;
 }
 
-.statusMiniSummary {
-  display: flex;
-  flex: 1 1 220px;
-  gap: 5px;
-  justify-content: flex-end;
-  flex-wrap: wrap;
-}
-
-.statusMiniSummary small {
-  border-radius: 999px;
-  padding: 3px 7px;
-  color: #ffffff;
-  font-size: 11px;
-  font-weight: 800;
-  white-space: nowrap;
-}
-
-.statusMiniSummary .NOT_RUN {
-  background: var(--not-run);
-}
-
-.statusMiniSummary .PASS {
-  background: var(--pass);
-}
-
-.statusMiniSummary .FAIL {
-  background: var(--fail);
-}
-
-.statusMiniSummary .BLOCKED {
-  background: var(--blocked);
-}
-
-.statusMiniSummary .SKIPPED {
-  background: var(--skipped);
-}
-
-.executionCategoryItems {
-  display: grid;
-  gap: 8px;
-}
-
-.executionResultRow {
-  display: grid;
-  grid-template-columns: 22px minmax(90px, 120px) minmax(0, 1fr) auto;
-  grid-template-areas:
-    "select case-id case-title case-title"
-    "select case-id priority status";
-  gap: 6px 12px;
-  align-items: start;
-  width: 100%;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 11px;
-  background: var(--panel-soft);
-  color: var(--text);
-  text-align: left;
-  font-weight: 400;
-}
-
-.executionResultCheckbox {
-  grid-area: select;
-  align-self: center;
-  width: 18px;
-  height: 18px;
-  margin: 0;
-}
-
-.executionResultRow:hover,
-.executionResultRow.selected {
-  border-color: var(--accent);
-  background: #fff9f5;
-}
-
-.executionResultRow span {
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-
-.executionResultRow .caseId {
-  grid-area: case-id;
-}
-
-.executionResultRow .caseTitle {
-  grid-area: case-title;
-  line-height: 1.3;
-}
-
-.executionResultRow .caseId,
-.executionResultRow .caseTitle {
-  font-weight: 700;
-}
-
-.executionResultRow .priority {
-  grid-area: priority;
-  justify-self: start;
-  white-space: nowrap;
-}
-
-.executionResultRow .status {
-  grid-area: status;
-  justify-self: end;
-  white-space: nowrap;
-}
-
 .resultDetailBody {
   display: grid;
   gap: 14px;
-  margin-bottom: 14px;
 }
 
-.resultDetailBody h3 {
+.resultEditorHeader {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 14px;
+}
+
+.resultEditorHeader h2 {
   margin-bottom: 0;
-  line-height: 1.35;
+  font-size: 24px;
+  line-height: 1.2;
+}
+
+.resultEditorMeta {
+  display: flex;
+  gap: 7px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  min-width: 180px;
+}
+
+.resultEditorMeta > span {
+  border-radius: 999px;
+  padding: 4px 9px;
+  background: #eef4f6;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.resultEditorMeta .caseId {
+  color: var(--text);
+}
+
+.resultEditorControls {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  border-top: 1px solid var(--line);
+  padding-top: 14px;
 }
 
 .formSectionHeader {
@@ -1246,22 +1435,52 @@ button.dangerText:hover {
   line-height: 1.35;
 }
 
-.summaryGrid {
+.summaryGrid,
+.summaryStats {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  margin-bottom: 16px;
+  gap: 12px;
 }
 
-.chartPanel {
+.summaryGrid {
+  grid-template-columns: 1fr;
+}
+
+.summaryStats {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.summaryDashboard {
   display: grid;
-  grid-column: 1 / -1;
-  grid-template-columns: 160px 1fr;
-  gap: 18px;
-  align-items: center;
+  grid-template-columns: minmax(220px, 0.8fr) minmax(260px, 1.2fr);
+  gap: 12px;
+}
+
+.passRatePanel,
+.statusChart {
   border: 1px solid var(--line);
   border-radius: 8px;
   padding: 16px;
   background: var(--panel-soft);
+}
+
+.passRatePanel {
+  display: grid;
+  gap: 12px;
+  justify-items: center;
+  text-align: center;
+}
+
+.passRatePanel strong,
+.statusChart > strong {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 15px;
+}
+
+.passRatePanel p {
+  margin-bottom: 0;
+  color: var(--muted);
+  font-size: 13px;
 }
 
 .passRateDonut {
@@ -1282,7 +1501,7 @@ button.dangerText:hover {
 
 .statusChart {
   display: grid;
-  gap: 10px;
+  gap: 12px;
 }
 
 .statusBarRow {
@@ -1385,21 +1604,15 @@ button.dangerText:hover {
   }
 
   .executionManagementWorkspace {
-    grid-template-columns: 260px minmax(0, 1fr);
-  }
-
-  .executionManagementWorkspace.creatorCollapsed {
-    grid-template-columns: 260px minmax(0, 1fr);
+    grid-template-columns: minmax(300px, 340px) minmax(0, 1fr);
   }
 
   .executionCreatorPane {
-    grid-column: 1 / -1;
-    position: static;
     max-height: none;
   }
 
   .executionWorkspace {
-    grid-template-columns: 220px minmax(0, 1fr);
+    grid-template-columns: 1fr;
   }
 
   .resultDetailPane {
@@ -1422,8 +1635,7 @@ button.dangerText:hover {
 
 @media (max-width: 780px) {
   .topbar,
-  .sectionHeader,
-  .addCasesBar {
+  .sectionHeader {
     align-items: stretch;
     flex-direction: column;
   }
@@ -1440,20 +1652,26 @@ button.dangerText:hover {
   .caseManagementWorkspace,
   .executionPageWorkspace,
   .executionManagementWorkspace,
+  .suiteWorkspace,
   .formGrid,
   .caseToolbar,
   .executionToolbar,
-  .detailFilters,
+  .addCaseFilters,
+  .suitePickerPanel,
   .bulkResultBar,
+  .resultEditorControls,
   .executionWorkspace,
   .summaryGrid,
-  .chartPanel {
+  .summaryStats,
+  .summaryDashboard {
     grid-template-columns: 1fr;
   }
 
   .caseNavigatorPane,
   .caseDetailPane,
   .executionNavigatorPane,
+  .suiteNavigatorPane,
+  .suiteDetailPane,
   .executionDetailPane,
   .executionCreatorPane,
   .runSummaryPane,
@@ -1502,9 +1720,14 @@ button.dangerText:hover {
   }
 
   .modalHeader,
+  .resultEditorHeader,
   .modalActions {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .resultEditorMeta {
+    justify-content: flex-start;
   }
 
   .previewTable {
@@ -1513,10 +1736,6 @@ button.dangerText:hover {
 
   .previewTableRow {
     grid-template-columns: 1fr;
-  }
-
-  .statusMiniSummary {
-    justify-content: flex-start;
   }
 
   .checklistCategoryHeader {
@@ -1529,27 +1748,29 @@ button.dangerText:hover {
   }
 
   .executionNavItem,
-  .executionWorkspace {
+  .executionWorkspace,
+  .suiteCaseRow {
     grid-template-columns: 1fr;
-  }
-
-  .executionResultRow {
-    grid-template-columns: 1fr;
-    grid-template-areas:
-      "select"
-      "case-id"
-      "case-title"
-      "priority"
-      "status";
-    gap: 6px;
-  }
-
-  .executionResultRow .priority,
-  .executionResultRow .status {
-    justify-self: start;
   }
 
   .historyPane {
     grid-column: auto;
+  }
+}
+
+@media (max-width: 520px) {
+  .executionNavHeader,
+  .executionToolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .executionNavHeader h2 {
+    margin-top: 0;
+  }
+
+  .executionNavHeader .headerActions,
+  .executionNavHeader button {
+    justify-items: stretch;
+    width: 100%;
   }
 }

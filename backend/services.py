@@ -1,0 +1,399 @@
+import sqlite3
+
+from database import engine, get_db, now_iso, row_to_dict
+from schemas import Status, TestCaseCreate
+
+
+def reset_legacy_category_schema(conn: sqlite3.Connection) -> None:
+    """Clear old local data when the app finds the retired feature columns."""
+    if engine:
+        return
+
+    existing_table = conn.execute(
+        "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'test_cases'"
+    ).fetchone()
+    if not existing_table:
+        return
+
+    columns = conn.execute("PRAGMA table_info(test_cases)").fetchall()
+    column_names = {column["name"] for column in columns}
+    if "feature" not in column_names and "sub_feature" not in column_names:
+        return
+
+    conn.executescript(
+        """
+        DROP TABLE IF EXISTS execution_history;
+        DROP TABLE IF EXISTS execution_items;
+        DROP TABLE IF EXISTS executions;
+        DROP TABLE IF EXISTS test_suite_cases;
+        DROP TABLE IF EXISTS test_suites;
+        DROP TABLE IF EXISTS test_case_steps;
+        DROP TABLE IF EXISTS test_cases;
+        DROP TABLE IF EXISTS categories;
+        """
+    )
+
+
+def init_db() -> None:
+    """Create tables if this is the first run of the app."""
+    with get_db() as conn:
+        reset_legacy_category_schema(conn)
+        if engine:
+            schema = """
+            CREATE TABLE IF NOT EXISTS categories (
+                id SERIAL PRIMARY KEY,
+                name TEXT NOT NULL UNIQUE,
+                created_at TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS test_cases (
+                id SERIAL PRIMARY KEY,
+                test_id TEXT NOT NULL DEFAULT '',
+                category TEXT NOT NULL DEFAULT '',
+                title TEXT NOT NULL,
+                priority TEXT NOT NULL DEFAULT 'Medium',
+                steps TEXT NOT NULL DEFAULT '',
+                expected_result TEXT NOT NULL DEFAULT '',
+                test_data TEXT NOT NULL DEFAULT '',
+                created_at TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS test_case_steps (
+                id SERIAL PRIMARY KEY,
+                test_case_id INTEGER NOT NULL REFERENCES test_cases(id) ON DELETE CASCADE,
+                step_order INTEGER NOT NULL,
+                step_text TEXT NOT NULL DEFAULT '',
+                expected_result TEXT NOT NULL DEFAULT ''
+            );
+
+            CREATE TABLE IF NOT EXISTS executions (
+                id SERIAL PRIMARY KEY,
+                name TEXT NOT NULL,
+                description TEXT NOT NULL DEFAULT '',
+                created_at TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS test_suites (
+                id SERIAL PRIMARY KEY,
+                name TEXT NOT NULL UNIQUE,
+                description TEXT NOT NULL DEFAULT '',
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS test_suite_cases (
+                id SERIAL PRIMARY KEY,
+                suite_id INTEGER NOT NULL REFERENCES test_suites(id) ON DELETE CASCADE,
+                test_case_id INTEGER NOT NULL REFERENCES test_cases(id) ON DELETE CASCADE,
+                position INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL,
+                UNIQUE (suite_id, test_case_id)
+            );
+
+            CREATE TABLE IF NOT EXISTS execution_items (
+                id SERIAL PRIMARY KEY,
+                execution_id INTEGER NOT NULL REFERENCES executions(id) ON DELETE CASCADE,
+                test_case_id INTEGER NOT NULL REFERENCES test_cases(id) ON DELETE CASCADE,
+                status TEXT NOT NULL DEFAULT 'NOT_RUN',
+                actual_result TEXT NOT NULL DEFAULT '',
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                UNIQUE (execution_id, test_case_id)
+            );
+
+            CREATE TABLE IF NOT EXISTS execution_history (
+                id SERIAL PRIMARY KEY,
+                execution_item_id INTEGER NOT NULL REFERENCES execution_items(id) ON DELETE CASCADE,
+                execution_id INTEGER NOT NULL REFERENCES executions(id) ON DELETE CASCADE,
+                test_case_id INTEGER NOT NULL REFERENCES test_cases(id) ON DELETE CASCADE,
+                status TEXT NOT NULL,
+                actual_result TEXT NOT NULL DEFAULT '',
+                changed_at TEXT NOT NULL
+            );
+            """
+        else:
+            schema = """
+            CREATE TABLE IF NOT EXISTS categories (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL UNIQUE,
+                created_at TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS test_cases (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                test_id TEXT NOT NULL DEFAULT '',
+                category TEXT NOT NULL DEFAULT '',
+                title TEXT NOT NULL,
+                priority TEXT NOT NULL DEFAULT 'Medium',
+                steps TEXT NOT NULL DEFAULT '',
+                expected_result TEXT NOT NULL DEFAULT '',
+                test_data TEXT NOT NULL DEFAULT '',
+                created_at TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS test_case_steps (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                test_case_id INTEGER NOT NULL,
+                step_order INTEGER NOT NULL,
+                step_text TEXT NOT NULL DEFAULT '',
+                expected_result TEXT NOT NULL DEFAULT '',
+                FOREIGN KEY (test_case_id) REFERENCES test_cases(id) ON DELETE CASCADE
+            );
+
+            CREATE TABLE IF NOT EXISTS executions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                description TEXT NOT NULL DEFAULT '',
+                created_at TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS test_suites (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL UNIQUE,
+                description TEXT NOT NULL DEFAULT '',
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS test_suite_cases (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                suite_id INTEGER NOT NULL,
+                test_case_id INTEGER NOT NULL,
+                position INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL,
+                FOREIGN KEY (suite_id) REFERENCES test_suites(id) ON DELETE CASCADE,
+                FOREIGN KEY (test_case_id) REFERENCES test_cases(id) ON DELETE CASCADE,
+                UNIQUE (suite_id, test_case_id)
+            );
+
+            CREATE TABLE IF NOT EXISTS execution_items (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                execution_id INTEGER NOT NULL,
+                test_case_id INTEGER NOT NULL,
+                status TEXT NOT NULL DEFAULT 'NOT_RUN',
+                actual_result TEXT NOT NULL DEFAULT '',
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                FOREIGN KEY (execution_id) REFERENCES executions(id) ON DELETE CASCADE,
+                FOREIGN KEY (test_case_id) REFERENCES test_cases(id) ON DELETE CASCADE,
+                UNIQUE (execution_id, test_case_id)
+            );
+
+            CREATE TABLE IF NOT EXISTS execution_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                execution_item_id INTEGER NOT NULL,
+                execution_id INTEGER NOT NULL,
+                test_case_id INTEGER NOT NULL,
+                status TEXT NOT NULL,
+                actual_result TEXT NOT NULL DEFAULT '',
+                changed_at TEXT NOT NULL,
+                FOREIGN KEY (execution_item_id) REFERENCES execution_items(id) ON DELETE CASCADE,
+                FOREIGN KEY (execution_id) REFERENCES executions(id) ON DELETE CASCADE,
+                FOREIGN KEY (test_case_id) REFERENCES test_cases(id) ON DELETE CASCADE
+            );
+            """
+        conn.executescript(schema)
+        sync_categories_from_test_cases(conn)
+        sync_steps_from_legacy_fields(conn)
+
+
+def normalize_category_name(name: str) -> str:
+    """Keep category names consistent before saving them."""
+    return " ".join(name.strip().split())
+
+
+def ensure_category(conn: sqlite3.Connection, name: str) -> None:
+    """Create a category if the user typed a new one in a test case form."""
+    category_name = normalize_category_name(name)
+    if not category_name:
+        return
+
+    existing = conn.execute(
+        "SELECT id FROM categories WHERE lower(name) = lower(?)",
+        (category_name,),
+    ).fetchone()
+    if existing:
+        return
+
+    conn.execute(
+        "INSERT INTO categories (name, created_at) VALUES (?, ?)",
+        (category_name, now_iso()),
+    )
+
+
+def sync_categories_from_test_cases(conn: sqlite3.Connection) -> None:
+    """Backfill category records from existing test cases."""
+    rows = conn.execute(
+        """
+        SELECT DISTINCT category
+        FROM test_cases
+        WHERE trim(category) != ''
+        """
+    ).fetchall()
+    for row in rows:
+        ensure_category(conn, row["category"])
+
+
+def sync_steps_from_legacy_fields(conn: sqlite3.Connection) -> None:
+    """Create one structured step for old test cases that only used text fields."""
+    rows = conn.execute(
+        """
+        SELECT id, steps, expected_result
+        FROM test_cases
+        WHERE trim(steps) != '' OR trim(expected_result) != ''
+        """
+    ).fetchall()
+    for row in rows:
+        existing_step = conn.execute(
+            "SELECT id FROM test_case_steps WHERE test_case_id = ? LIMIT 1",
+            (row["id"],),
+        ).fetchone()
+        if existing_step:
+            continue
+
+        replace_test_case_steps(
+            conn,
+            row["id"],
+            [
+                {
+                    "step_text": row["steps"],
+                    "expected_result": row["expected_result"],
+                }
+            ],
+        )
+
+
+def normalize_case_steps(payload: TestCaseCreate) -> list[dict]:
+    """Prefer structured steps, but support the older textarea fields."""
+    step_rows = [
+        {
+            "step_text": step.step_text.strip(),
+            "expected_result": step.expected_result.strip(),
+        }
+        for step in payload.case_steps
+        if step.step_text.strip() or step.expected_result.strip()
+    ]
+    if step_rows:
+        return step_rows
+
+    if payload.steps.strip() or payload.expected_result.strip():
+        return [
+            {
+                "step_text": payload.steps.strip(),
+                "expected_result": payload.expected_result.strip(),
+            }
+        ]
+
+    return []
+
+
+def steps_to_legacy_text(case_steps: list[dict]) -> tuple[str, str]:
+    """Store readable text summaries for older CSV/API clients."""
+    steps = "\n".join(step["step_text"] for step in case_steps if step["step_text"])
+    expected = "\n".join(
+        step["expected_result"] for step in case_steps if step["expected_result"]
+    )
+    return steps, expected
+
+
+def replace_test_case_steps(
+    conn: sqlite3.Connection, test_case_id: int, case_steps: list[dict]
+) -> None:
+    conn.execute("DELETE FROM test_case_steps WHERE test_case_id = ?", (test_case_id,))
+    for index, step in enumerate(case_steps, start=1):
+        conn.execute(
+            """
+            INSERT INTO test_case_steps
+                (test_case_id, step_order, step_text, expected_result)
+            VALUES (?, ?, ?, ?)
+            """,
+            (
+                test_case_id,
+                index,
+                step["step_text"],
+                step["expected_result"],
+            ),
+        )
+
+
+def get_test_case_steps(conn: sqlite3.Connection, test_case_id: int) -> list[dict]:
+    rows = conn.execute(
+        """
+        SELECT id, test_case_id, step_order, step_text, expected_result
+        FROM test_case_steps
+        WHERE test_case_id = ?
+        ORDER BY step_order, id
+        """,
+        (test_case_id,),
+    ).fetchall()
+    return [row_to_dict(row) for row in rows]
+
+
+def attach_steps_to_test_case(conn: sqlite3.Connection, row: sqlite3.Row) -> dict:
+    data = row_to_dict(row)
+    data["case_steps"] = get_test_case_steps(conn, data["id"])
+    return data
+
+
+def find_missing_test_case_ids(conn: sqlite3.Connection, test_case_ids: list[int]) -> list[int]:
+    """Return IDs that were requested but do not exist in the test_cases table."""
+    if not test_case_ids:
+        return []
+
+    placeholders = ",".join("?" for _ in test_case_ids)
+    found_cases = conn.execute(
+        f"SELECT id FROM test_cases WHERE id IN ({placeholders})",
+        test_case_ids,
+    ).fetchall()
+    found_ids = {row["id"] for row in found_cases}
+    return sorted(set(test_case_ids) - found_ids)
+
+
+def find_missing_execution_item_ids(conn, item_ids: list[int]) -> list[int]:
+    if not item_ids:
+        return []
+
+    placeholders = ",".join("?" for _ in item_ids)
+    found_items = conn.execute(
+        f"SELECT id FROM execution_items WHERE id IN ({placeholders})",
+        item_ids,
+    ).fetchall()
+    found_ids = {row["id"] for row in found_items}
+    return sorted(set(item_ids) - found_ids)
+
+
+def update_execution_item_result(
+    conn, item_id: int, status: Status, actual_result: str, timestamp: str
+):
+    item = conn.execute(
+        "SELECT * FROM execution_items WHERE id = ?", (item_id,)
+    ).fetchone()
+    if not item:
+        return None
+
+    conn.execute(
+        """
+        UPDATE execution_items
+        SET status = ?, actual_result = ?, updated_at = ?
+        WHERE id = ?
+        """,
+        (status, actual_result, timestamp, item_id),
+    )
+    conn.execute(
+        """
+        INSERT INTO execution_history
+            (execution_item_id, execution_id, test_case_id, status, actual_result, changed_at)
+        VALUES (?, ?, ?, ?, ?, ?)
+        """,
+        (
+            item_id,
+            item["execution_id"],
+            item["test_case_id"],
+            status,
+            actual_result,
+            timestamp,
+        ),
+    )
+    return conn.execute(
+        "SELECT * FROM execution_items WHERE id = ?", (item_id,)
+    ).fetchone()

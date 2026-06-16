@@ -2,9 +2,10 @@
 
 A beginner-friendly full-stack TestRail-like web app using FastAPI, PostgreSQL for Docker Compose, SQLite fallback for simple manual runs, and plain HTML/CSS/JavaScript.
 
-The app has two main workspaces:
+The app has three main workspaces:
 
 - `Test Cases`: manage reusable test cases.
+- `Test Suites`: manage reusable groups of test cases.
 - `Executions`: create test runs, update results, and review history.
 
 ## Tech Stack
@@ -40,19 +41,29 @@ Test cases include:
 - Step rows with Step and Expected Result
 - Test Data
 
+### Test Suites
+
+- Create reusable test suites
+- Edit test suite name and description
+- Add or remove test cases from a suite with searchable, category-grouped checkboxes
+- Browse suites from a left-side suite list
+- View suite contents grouped by category
+- Delete test suites without deleting the original test cases
+
 ### Executions
 
 - Create executions by selecting test cases from a checkbox list
+- Create executions faster by applying a Test Suite to preselect its test cases
 - Filter and select execution test cases by category
 - Execution names must be unique
 - Delete executions
-- Add more test cases into an existing execution
+- Add more test cases into an existing execution with search, category filter, and grouped checkboxes
 - Browse executions from a left-side execution list
 - View execution pass rate and status chart
 - Filter execution results by search, status, and priority
 - Review execution results grouped by category with expandable sections
-- Bulk update selected execution results
-- Select one result from `Tests & Results` and edit it in the `Selected Result` panel
+- Bulk update execution results selected from the left-side execution tree
+- Select one result from the left-side execution tree and edit it in the `Selected Result` panel
 - Update result status: `NOT_RUN`, `PASS`, `FAIL`, `BLOCKED`, `SKIPPED`
 - Add actual result notes
 - View execution history
@@ -84,27 +95,50 @@ http://localhost:5173/executions.html
 
 Layout:
 
-- Left: execution list
-- Center: selected execution detail, run summary, tests and results, selected result editor, and history
-- Right: collapsible create execution form with selectable test cases
+- Left: execution tree. The selected execution expands to show its test cases and result statuses
+- Center: selected execution detail with collapsible add/bulk tools and a focused selected result editor
+- Bottom of the center area: history and run summary
+- Create execution opens in the center panel with selectable test cases
+
+### Test Suites Page
+
+Open:
+
+```text
+http://localhost:5173/suites.html
+```
+
+Layout:
+
+- Left: searchable test suite list
+- Center: selected suite detail and create/edit form
+- Test case picker: searchable and grouped by category
 
 ## Project Structure
 
 ```text
 backend/
   Dockerfile
+  database.py
   main.py
   requirements.txt
   Procfile
   railway.json
   runtime.txt
+  schemas.py
+  services.py
 frontend/
   Dockerfile
   index.html
+  suites.html
   executions.html
   styles.css
   app.js
+  api.js
+  config.js
+  dom.js
   env.js
+  utils.js
   nginx.conf
   netlify.toml
   assets/
@@ -300,6 +334,14 @@ window.API_BASE = "https://your-api.up.railway.app";
 - `PUT /categories/{category_id}`
 - `DELETE /categories/{category_id}`
 
+### Test Suites
+
+- `GET /test-suites`
+- `POST /test-suites`
+- `GET /test-suites/{suite_id}`
+- `PUT /test-suites/{suite_id}`
+- `DELETE /test-suites/{suite_id}`
+
 ### Executions
 
 - `GET /executions`
@@ -434,4 +476,4 @@ Bulk updates also write one history entry per updated result.
 - Deleting a category does not delete test cases. Related test cases become Uncategorized.
 - Deleting a test case also removes related execution items and history through cascading deletes.
 - Deleting an execution also removes its results and history.
-- The frontend is intentionally plain HTML/CSS/JavaScript, so no build step is required.
+- The frontend is intentionally plain HTML/CSS/JavaScript with native ES modules, so no build step is required.

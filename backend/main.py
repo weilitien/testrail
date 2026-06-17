@@ -20,6 +20,7 @@ from schemas import (
 )
 from services import (
     attach_steps_to_test_case,
+    create_execution_item_from_snapshot,
     ensure_category,
     find_missing_execution_item_ids,
     find_missing_test_case_ids,
@@ -27,6 +28,7 @@ from services import (
     init_db,
     normalize_case_steps,
     normalize_category_name,
+    parse_case_steps_snapshot,
     replace_test_case_steps,
     steps_to_legacy_text,
     update_execution_item_result,
@@ -243,7 +245,8 @@ def update_test_case(test_case_id: int, payload: TestCaseCreate):
                 priority = ?,
                 steps = ?,
                 expected_result = ?,
-                test_data = ?
+                test_data = ?,
+                current_version = current_version + 1
             WHERE id = ?
             """,
             (
@@ -597,13 +600,11 @@ def create_execution(payload: ExecutionCreate):
         execution_id = cursor.lastrowid
 
         for test_case_id in test_case_ids:
-            conn.execute(
-                """
-                INSERT INTO execution_items
-                    (execution_id, test_case_id, status, actual_result, created_at, updated_at)
-                VALUES (?, ?, 'NOT_RUN', '', ?, ?)
-                """,
-                (execution_id, test_case_id, created_at, created_at),
+            create_execution_item_from_snapshot(
+                conn,
+                execution_id,
+                test_case_id,
+                created_at,
             )
 
         execution = conn.execute(
@@ -660,15 +661,16 @@ def get_execution_detail(execution_id: int):
                 i.actual_result,
                 i.created_at,
                 i.updated_at,
-                tc.test_id,
-                tc.category,
-                tc.title,
-                tc.priority,
-                tc.steps,
-                tc.expected_result,
-                tc.test_data
+                i.snapshot_test_id AS test_id,
+                i.snapshot_category AS category,
+                i.snapshot_title AS title,
+                i.snapshot_priority AS priority,
+                i.snapshot_steps AS steps,
+                i.snapshot_expected_result AS expected_result,
+                i.snapshot_test_data AS test_data,
+                i.snapshot_case_steps,
+                i.snapshot_version
             FROM execution_items i
-            JOIN test_cases tc ON tc.id = i.test_case_id
             WHERE i.execution_id = ?
             ORDER BY i.id
             """,
@@ -676,11 +678,11 @@ def get_execution_detail(execution_id: int):
         ).fetchall()
 
     item_list = []
-    with get_db() as conn:
-        for row in items:
-            item = row_to_dict(row)
-            item["case_steps"] = get_test_case_steps(conn, item["test_case_id"])
-            item_list.append(item)
+    for row in items:
+        item = row_to_dict(row)
+        item["case_steps"] = parse_case_steps_snapshot(item["snapshot_case_steps"])
+        item.pop("snapshot_case_steps", None)
+        item_list.append(item)
     total = len(item_list)
     passed = sum(1 for item in item_list if item["status"] == "PASS")
     return {
@@ -727,16 +729,14 @@ def add_test_cases_to_execution(execution_id: int, payload: AddCasesRequest):
 
         added_count = 0
         for test_case_id in payload.test_case_ids:
-            cursor = conn.execute(
-                """
-                INSERT INTO execution_items
-                    (execution_id, test_case_id, status, actual_result, created_at, updated_at)
-                VALUES (?, ?, 'NOT_RUN', '', ?, ?)
-                ON CONFLICT (execution_id, test_case_id) DO NOTHING
-                """,
-                (execution_id, test_case_id, timestamp, timestamp),
+            cursor = create_execution_item_from_snapshot(
+                conn,
+                execution_id,
+                test_case_id,
+                timestamp,
             )
-            added_count += cursor.rowcount
+            if cursor:
+                added_count += cursor.rowcount
 
     return {"added_count": added_count}
 
@@ -796,9 +796,9 @@ def get_execution_history(execution_id: int):
                 h.status,
                 h.actual_result,
                 h.changed_at,
-                tc.title
+                i.snapshot_title AS title
             FROM execution_history h
-            JOIN test_cases tc ON tc.id = h.test_case_id
+            JOIN execution_items i ON i.id = h.execution_item_id
             WHERE h.execution_id = ?
             ORDER BY h.id DESC
             """,

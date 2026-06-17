@@ -135,9 +135,18 @@ frontend/
   styles.css
   app.js
   api.js
+  caseBrowser.js
+  caseDetails.js
+  checklists.js
   config.js
+  csvImport.js
   dom.js
+  executions.js
   env.js
+  reports.js
+  suites.js
+  testCaseActions.js
+  testCaseForm.js
   utils.js
   nginx.conf
   netlify.toml

@@ -1,3 +1,4 @@
+import json
 import sqlite3
 
 from database import engine, get_db, now_iso, row_to_dict
@@ -55,7 +56,8 @@ def init_db() -> None:
                 steps TEXT NOT NULL DEFAULT '',
                 expected_result TEXT NOT NULL DEFAULT '',
                 test_data TEXT NOT NULL DEFAULT '',
-                created_at TEXT NOT NULL
+                created_at TEXT NOT NULL,
+                current_version INTEGER NOT NULL DEFAULT 1
             );
 
             CREATE TABLE IF NOT EXISTS test_case_steps (
@@ -96,6 +98,15 @@ def init_db() -> None:
                 test_case_id INTEGER NOT NULL REFERENCES test_cases(id) ON DELETE CASCADE,
                 status TEXT NOT NULL DEFAULT 'NOT_RUN',
                 actual_result TEXT NOT NULL DEFAULT '',
+                snapshot_test_id TEXT NOT NULL DEFAULT '',
+                snapshot_category TEXT NOT NULL DEFAULT '',
+                snapshot_title TEXT NOT NULL DEFAULT '',
+                snapshot_priority TEXT NOT NULL DEFAULT 'Medium',
+                snapshot_steps TEXT NOT NULL DEFAULT '',
+                snapshot_expected_result TEXT NOT NULL DEFAULT '',
+                snapshot_test_data TEXT NOT NULL DEFAULT '',
+                snapshot_case_steps TEXT NOT NULL DEFAULT '[]',
+                snapshot_version INTEGER NOT NULL DEFAULT 1,
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL,
                 UNIQUE (execution_id, test_case_id)
@@ -128,7 +139,8 @@ def init_db() -> None:
                 steps TEXT NOT NULL DEFAULT '',
                 expected_result TEXT NOT NULL DEFAULT '',
                 test_data TEXT NOT NULL DEFAULT '',
-                created_at TEXT NOT NULL
+                created_at TEXT NOT NULL,
+                current_version INTEGER NOT NULL DEFAULT 1
             );
 
             CREATE TABLE IF NOT EXISTS test_case_steps (
@@ -172,6 +184,15 @@ def init_db() -> None:
                 test_case_id INTEGER NOT NULL,
                 status TEXT NOT NULL DEFAULT 'NOT_RUN',
                 actual_result TEXT NOT NULL DEFAULT '',
+                snapshot_test_id TEXT NOT NULL DEFAULT '',
+                snapshot_category TEXT NOT NULL DEFAULT '',
+                snapshot_title TEXT NOT NULL DEFAULT '',
+                snapshot_priority TEXT NOT NULL DEFAULT 'Medium',
+                snapshot_steps TEXT NOT NULL DEFAULT '',
+                snapshot_expected_result TEXT NOT NULL DEFAULT '',
+                snapshot_test_data TEXT NOT NULL DEFAULT '',
+                snapshot_case_steps TEXT NOT NULL DEFAULT '[]',
+                snapshot_version INTEGER NOT NULL DEFAULT 1,
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL,
                 FOREIGN KEY (execution_id) REFERENCES executions(id) ON DELETE CASCADE,
@@ -193,8 +214,56 @@ def init_db() -> None:
             );
             """
         conn.executescript(schema)
+        ensure_versioning_columns(conn)
         sync_categories_from_test_cases(conn)
         sync_steps_from_legacy_fields(conn)
+        backfill_execution_item_snapshots(conn)
+
+
+def get_table_columns(conn, table_name: str) -> set[str]:
+    if engine:
+        rows = conn.execute(
+            """
+            SELECT column_name AS name
+            FROM information_schema.columns
+            WHERE table_name = ?
+            """,
+            (table_name,),
+        ).fetchall()
+    else:
+        rows = conn.execute(f"PRAGMA table_info({table_name})").fetchall()
+    return {row["name"] for row in rows}
+
+
+def add_column_if_missing(conn, table_name: str, column_name: str, definition: str) -> None:
+    if column_name in get_table_columns(conn, table_name):
+        return
+
+    conn.execute(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {definition}")
+
+
+def ensure_versioning_columns(conn) -> None:
+    """Add lightweight versioning columns for existing local/dev databases."""
+    add_column_if_missing(
+        conn,
+        "test_cases",
+        "current_version",
+        "INTEGER NOT NULL DEFAULT 1",
+    )
+
+    snapshot_columns = {
+        "snapshot_test_id": "TEXT NOT NULL DEFAULT ''",
+        "snapshot_category": "TEXT NOT NULL DEFAULT ''",
+        "snapshot_title": "TEXT NOT NULL DEFAULT ''",
+        "snapshot_priority": "TEXT NOT NULL DEFAULT 'Medium'",
+        "snapshot_steps": "TEXT NOT NULL DEFAULT ''",
+        "snapshot_expected_result": "TEXT NOT NULL DEFAULT ''",
+        "snapshot_test_data": "TEXT NOT NULL DEFAULT ''",
+        "snapshot_case_steps": "TEXT NOT NULL DEFAULT '[]'",
+        "snapshot_version": "INTEGER NOT NULL DEFAULT 1",
+    }
+    for column_name, definition in snapshot_columns.items():
+        add_column_if_missing(conn, "execution_items", column_name, definition)
 
 
 def normalize_category_name(name: str) -> str:
@@ -333,6 +402,146 @@ def attach_steps_to_test_case(conn: sqlite3.Connection, row: sqlite3.Row) -> dic
     data = row_to_dict(row)
     data["case_steps"] = get_test_case_steps(conn, data["id"])
     return data
+
+
+def serialize_case_steps(case_steps: list[dict]) -> str:
+    return json.dumps(
+        [
+            {
+                "step_text": step.get("step_text", ""),
+                "expected_result": step.get("expected_result", ""),
+            }
+            for step in case_steps
+        ]
+    )
+
+
+def parse_case_steps_snapshot(raw_steps: str) -> list[dict]:
+    try:
+        steps = json.loads(raw_steps or "[]")
+    except json.JSONDecodeError:
+        return []
+
+    if not isinstance(steps, list):
+        return []
+
+    return [
+        {
+            "step_text": str(step.get("step_text", "")),
+            "expected_result": str(step.get("expected_result", "")),
+        }
+        for step in steps
+        if isinstance(step, dict)
+    ]
+
+
+def create_execution_item_from_snapshot(
+    conn,
+    execution_id: int,
+    test_case_id: int,
+    timestamp: str,
+):
+    """Add a test case to an execution using a frozen snapshot of its current data."""
+    test_case = conn.execute(
+        "SELECT * FROM test_cases WHERE id = ?",
+        (test_case_id,),
+    ).fetchone()
+    if not test_case:
+        return None
+
+    case_steps = get_test_case_steps(conn, test_case_id)
+    snapshot_steps = serialize_case_steps(case_steps)
+    return conn.execute(
+        """
+        INSERT INTO execution_items (
+            execution_id,
+            test_case_id,
+            status,
+            actual_result,
+            snapshot_test_id,
+            snapshot_category,
+            snapshot_title,
+            snapshot_priority,
+            snapshot_steps,
+            snapshot_expected_result,
+            snapshot_test_data,
+            snapshot_case_steps,
+            snapshot_version,
+            created_at,
+            updated_at
+        )
+        VALUES (?, ?, 'NOT_RUN', '', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT (execution_id, test_case_id) DO NOTHING
+        """,
+        (
+            execution_id,
+            test_case_id,
+            test_case["test_id"],
+            test_case["category"],
+            test_case["title"],
+            test_case["priority"],
+            test_case["steps"],
+            test_case["expected_result"],
+            test_case["test_data"],
+            snapshot_steps,
+            test_case["current_version"],
+            timestamp,
+            timestamp,
+        ),
+    )
+
+
+def backfill_execution_item_snapshots(conn) -> None:
+    """Populate snapshots for execution items created before versioning existed."""
+    rows = conn.execute(
+        """
+        SELECT
+            i.id AS execution_item_id,
+            tc.id AS test_case_id,
+            tc.test_id,
+            tc.category,
+            tc.title,
+            tc.priority,
+            tc.steps,
+            tc.expected_result,
+            tc.test_data,
+            tc.current_version
+        FROM execution_items i
+        JOIN test_cases tc ON tc.id = i.test_case_id
+        WHERE trim(i.snapshot_title) = ''
+        """
+    ).fetchall()
+
+    for row in rows:
+        case_steps = get_test_case_steps(conn, row["test_case_id"])
+        conn.execute(
+            """
+            UPDATE execution_items
+            SET
+                snapshot_test_id = ?,
+                snapshot_category = ?,
+                snapshot_title = ?,
+                snapshot_priority = ?,
+                snapshot_steps = ?,
+                snapshot_expected_result = ?,
+                snapshot_test_data = ?,
+                snapshot_case_steps = ?,
+                snapshot_version = ?
+            WHERE id = ?
+            """,
+            (
+                row["test_id"],
+                row["category"],
+                row["title"],
+                row["priority"],
+                row["steps"],
+                row["expected_result"],
+                row["test_data"],
+                serialize_case_steps(case_steps),
+                row["current_version"],
+                row["execution_item_id"],
+            ),
+        )
 
 
 def find_missing_test_case_ids(conn: sqlite3.Connection, test_case_ids: list[int]) -> list[int]:

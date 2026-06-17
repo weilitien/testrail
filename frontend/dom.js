@@ -26,6 +26,7 @@ export const elements = {
   suiteCaseCategoryFilter: document.querySelector("#suiteCaseCategoryFilter"),
   suiteCaseChecklist: document.querySelector("#suiteCaseChecklist"),
   selectedSuiteCaseCount: document.querySelector("#selectedSuiteCaseCount"),
+  selectedSuiteCaseList: document.querySelector("#selectedSuiteCaseList"),
   suiteDetailEmpty: document.querySelector("#suiteDetailEmpty"),
   suiteDetailContent: document.querySelector("#suiteDetailContent"),
   selectedSuiteTitle: document.querySelector("#selectedSuiteTitle"),

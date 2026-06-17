@@ -58,23 +58,36 @@ body {
 .topnav {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
   justify-content: flex-end;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 5px;
+  background: #eef7fa;
 }
 
 .topnav a {
+  border: 1px solid transparent;
   border-radius: 6px;
-  padding: 10px 12px;
+  padding: 10px 14px;
+  background: #ffffff;
   color: var(--muted);
   text-decoration: none;
   font-weight: 700;
+  box-shadow: inset 0 -1px 0 rgb(17 19 24 / 6%);
 }
 
-.topnav a:hover,
+.topnav a:hover {
+  border-color: #b9ccd3;
+  color: var(--text);
+}
+
 .topnav a.active {
+  border-color: #111318;
   background: #111318;
   color: #ffffff;
+  box-shadow: 0 6px 14px rgb(17 19 24 / 18%);
 }
 
 h1,
@@ -585,7 +598,7 @@ button.dangerText:hover {
 
 .caseTreeItem {
   display: grid;
-  grid-template-columns: minmax(84px, 0.8fr) minmax(0, 1.4fr) auto;
+  grid-template-columns: 180px minmax(0, 1fr) auto;
   gap: 8px;
   align-items: center;
   width: 100%;
@@ -618,6 +631,7 @@ button.dangerText:hover {
 
 .caseTreeItem strong {
   font-size: 13px;
+  justify-self: start;
   line-height: 1.25;
 }
 
@@ -625,6 +639,7 @@ button.dangerText:hover {
   min-width: 0;
   padding: 4px 8px;
   font-size: 11px;
+  white-space: nowrap;
 }
 
 .treeEmptyState {
@@ -832,9 +847,108 @@ button.dangerText:hover {
 .suiteCaseList,
 .suiteCaseGroup,
 .suiteCaseItems,
-.suiteCasePicker {
+.suiteCasePicker,
+.selectedSuiteCases,
+.selectedSuiteCaseList,
+.selectedSuiteCaseGroup,
+.selectedSuiteCaseItems {
   display: grid;
   gap: 10px;
+}
+
+.suiteCasePicker {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  background: #eef7fa;
+}
+
+.selectedSuiteCases {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px;
+  background: #ffffff;
+}
+
+.formSectionHeader.compact {
+  gap: 8px;
+}
+
+.formSectionHeader.compact h4 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.formSectionHeader.compact span {
+  font-size: 12px;
+}
+
+.selectedSuiteCaseList {
+  max-height: 280px;
+  overflow: auto;
+}
+
+.selectedSuiteCaseHeader {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.selectedSuiteCaseHeader strong {
+  width: fit-content;
+  border-radius: 999px;
+  padding: 5px 12px;
+  background: #e8f5f8;
+  color: #25313a;
+  font-size: 15px;
+}
+
+.selectedSuiteCaseHeader span {
+  border-radius: 999px;
+  padding: 3px 9px;
+  background: #f3f8fa;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.selectedSuiteCaseRow {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr) auto auto;
+  gap: 8px;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px;
+  background: var(--panel-soft);
+}
+
+.selectedSuiteCaseRow .caseId,
+.selectedSuiteCaseRow strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.selectedSuiteCaseRow .caseId {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.selectedSuiteCaseRow strong {
+  font-size: 13px;
+  justify-self: start;
+  line-height: 1.2;
+}
+
+.selectedSuiteCaseRow .iconButton {
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+.suiteCasePicker .checklist {
+  max-height: 320px;
 }
 
 .suitePickerPanel {
@@ -898,7 +1012,7 @@ button.dangerText:hover {
 
 .suiteCaseRow {
   display: grid;
-  grid-template-columns: minmax(90px, 0.7fr) minmax(0, 1fr) auto;
+  grid-template-columns: 180px minmax(0, 1fr) auto;
   gap: 10px;
   align-items: center;
   border: 1px solid var(--line);
@@ -921,6 +1035,7 @@ button.dangerText:hover {
 
 .suiteCaseRow strong {
   font-size: 13px;
+  justify-self: start;
 }
 
 .executionNavButton strong {
@@ -1692,6 +1807,15 @@ button.dangerText:hover {
 
   .caseTreeItem .priority {
     grid-column: auto;
+  }
+
+  .selectedSuiteCaseRow {
+    grid-template-columns: 1fr;
+  }
+
+  .selectedSuiteCaseRow .priority,
+  .selectedSuiteCaseRow .iconButton {
+    width: fit-content;
   }
 
   .stepsTableHeader {

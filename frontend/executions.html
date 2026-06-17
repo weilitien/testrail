@@ -7,44 +7,64 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <header class="topbar">
-      <div class="brand">
-        <img class="brandIcon" src="assets/app-icon.jpg" alt="Mini TestRail icon" />
-        <div>
-          <h1>Mini TestRail</h1>
-          <p>Manage test cases, executions, results, and history.</p>
-        </div>
-      </div>
-      <nav class="topnav">
-        <a href="index.html">Test Cases</a>
-        <a href="suites.html">Test Suites</a>
-        <a class="active" href="executions.html">Executions</a>
-        <button id="refreshButton" type="button">Refresh</button>
-      </nav>
-    </header>
-
-    <main id="executionPageRoot" class="executionPageWorkspace executionManagementWorkspace">
-      <aside class="panel executionNavigatorPane">
-        <div class="sectionHeader executionNavHeader">
-          <h2>Executions</h2>
-          <div class="headerActions">
-            <span id="executionCount" class="muted"></span>
-            <button id="toggleExecutionCreatorButton" type="button">New Execution</button>
+    <div class="appShell">
+      <aside class="appSidebar">
+        <header class="topbar">
+          <div class="brand">
+            <img class="brandIcon" src="assets/app-icon.jpg" alt="Mini TestRail icon" />
+            <div>
+              <h1>Mini TestRail</h1>
+              <p>Manage test cases, executions, results, and history.</p>
+            </div>
           </div>
-        </div>
-        <div class="executionToolbar">
-          <label>
-            Search
-            <input id="executionSearch" placeholder="Execution name or description" />
-          </label>
-          <button id="clearExecutionSearchButton" class="secondary" type="button">
-            Clear
-          </button>
-        </div>
-        <div id="executionList" class="executionNavList"></div>
+          <nav class="topnav">
+            <a class="navItem" href="index.html">
+              <span class="navIcon">TC</span>
+              <span>Test Cases</span>
+            </a>
+            <a class="navItem" href="suites.html">
+              <span class="navIcon">TS</span>
+              <span>Test Suites</span>
+            </a>
+            <div class="navGroup active">
+              <a class="navItem active" href="executions.html">
+                <span class="navIcon">ER</span>
+                <span>Test Runs & Results</span>
+              </a>
+              <div class="navSubtree">
+                <span>Overview</span>
+                <span class="active">Tests & Results</span>
+                <span>Activity</span>
+                <span>Progress</span>
+                <span>Reports</span>
+              </div>
+            </div>
+          </nav>
+        </header>
+
+        <section class="panel executionNavigatorPane">
+          <div class="sectionHeader executionNavHeader">
+            <h2>Executions</h2>
+            <div class="headerActions">
+              <span id="executionCount" class="muted"></span>
+              <button id="toggleExecutionCreatorButton" type="button">New Execution</button>
+            </div>
+          </div>
+          <div class="executionToolbar">
+            <label>
+              Search
+              <input id="executionSearch" placeholder="Execution name or description" />
+            </label>
+            <button id="clearExecutionSearchButton" class="secondary" type="button">
+              Clear
+            </button>
+          </div>
+          <div id="executionList" class="executionNavList"></div>
+        </section>
       </aside>
 
-      <section id="executionDetailPanel" class="panel executionDetailPane" hidden>
+      <main id="executionPageRoot" class="appMain executionPageWorkspace executionManagementWorkspace">
+        <section id="executionDetailPanel" class="panel executionDetailPane" hidden>
         <div class="sectionHeader">
           <h2>Execution Detail</h2>
           <div class="headerActions">
@@ -150,14 +170,14 @@
             </button>
           </aside>
         </div>
-      </section>
+        </section>
 
-      <section id="executionEmptyPanel" class="panel executionDetailPane emptyState">
-        <h2>Select an Execution</h2>
-        <p class="muted">Choose an execution on the left to update results, review history, and see pass rate.</p>
-      </section>
+        <section id="executionEmptyPanel" class="panel executionDetailPane emptyState">
+          <h2>Select an Execution</h2>
+          <p class="muted">Choose an execution on the left to update results, review history, and see pass rate.</p>
+        </section>
 
-      <section id="executionCreatorPane" class="panel executionDetailPane executionCreatorPane" hidden>
+        <section id="executionCreatorPane" class="panel executionDetailPane executionCreatorPane" hidden>
         <div class="sectionHeader">
           <h2>Create Execution</h2>
           <button id="closeExecutionCreatorButton" class="secondary" type="button">Close</button>
@@ -199,8 +219,9 @@
           <div id="executionCaseChecklist" class="checklist"></div>
           <button type="submit">Create Execution</button>
         </form>
-      </section>
-    </main>
+        </section>
+      </main>
+    </div>
 
     <div id="toast" class="toast" hidden></div>
     <script src="env.js"></script>

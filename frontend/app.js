@@ -804,9 +804,6 @@ if (elements.selectedExecutionItemForm) {
   });
 }
 
-if (elements.refreshButton) {
-  elements.refreshButton.addEventListener("click", loadInitialData);
-}
 if (elements.suiteForm) {
   elements.suiteForm.addEventListener("submit", async (event) => {
     event.preventDefault();

@@ -7,144 +7,166 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <header class="topbar">
-      <div class="brand">
-        <img class="brandIcon" src="assets/app-icon.jpg" alt="Mini TestRail icon" />
-        <div>
-          <h1>Mini TestRail</h1>
-          <p>Manage test cases, executions, results, and history.</p>
-        </div>
-      </div>
-      <nav class="topnav">
-        <a class="active" href="index.html">Test Cases</a>
-        <a href="suites.html">Test Suites</a>
-        <a href="executions.html">Executions</a>
-        <button id="refreshButton" type="button">Refresh</button>
-      </nav>
-    </header>
+    <div class="appShell">
+      <aside class="appSidebar">
+        <header class="topbar">
+          <div class="brand">
+            <img class="brandIcon" src="assets/app-icon.jpg" alt="Mini TestRail icon" />
+            <div>
+              <h1>Mini TestRail</h1>
+              <p>Manage test cases, executions, results, and history.</p>
+            </div>
+          </div>
+          <nav class="topnav">
+            <a class="navItem active" href="index.html">
+              <span class="navIcon">TC</span>
+              <span>Test Cases</span>
+            </a>
+            <a class="navItem" href="suites.html">
+              <span class="navIcon">TS</span>
+              <span>Test Suites</span>
+            </a>
+            <a class="navItem" href="executions.html">
+              <span class="navIcon">ER</span>
+              <span>Test Runs & Results</span>
+            </a>
+          </nav>
+        </header>
 
-    <main class="caseWorkspace caseManagementWorkspace">
-      <aside class="panel caseNavigatorPane">
-        <div class="sectionHeader">
-          <h2>Categories</h2>
-          <span id="caseCount" class="muted"></span>
-        </div>
-        <form id="categoryForm" class="categoryForm">
-          <label>
-            New Category
-            <input id="categoryName" placeholder="Hardware" />
-          </label>
-          <button type="submit">Add</button>
-        </form>
-        <div class="caseToolbar">
-          <label>
-            Search
-            <input id="caseSearch" placeholder="Test ID, title, category" />
-          </label>
-          <label>
-            Priority
-            <select id="casePriorityFilter">
-              <option value="">All priorities</option>
-              <option value="Critical">Critical</option>
-              <option value="High">High</option>
-              <option value="Medium">Medium</option>
-              <option value="Low">Low</option>
-            </select>
-          </label>
-          <button id="clearCaseFiltersButton" class="secondary" type="button">Clear Filters</button>
-        </div>
-        <div class="sectionHeader compactHeader">
-          <h2>Test Cases</h2>
-          <button id="createCaseButton" type="button">New Case</button>
-        </div>
-        <div id="categoryTree" class="categoryTree"></div>
+        <section class="panel caseNavigatorPane">
+          <div class="sectionHeader">
+            <h2>Test Cases</h2>
+            <span id="caseCount" class="muted"></span>
+          </div>
+          <div id="categoryTree" class="categoryTree"></div>
+        </section>
       </aside>
 
-      <aside class="panel caseDetailPane">
-        <div id="caseDetailEmpty" class="emptyState">
-          <h2>Select a Test Case</h2>
-          <p class="muted">Choose a case from the list to view details, edit, duplicate, or delete it.</p>
-        </div>
-
-        <div id="caseDetailContent" hidden>
+      <main class="appMain caseWorkspace caseManagementWorkspace">
+        <section class="panel caseToolsPane">
           <div class="sectionHeader">
-            <h2 id="selectedCaseTitle">Test Case Detail</h2>
-            <span id="selectedCasePriority"></span>
+            <div>
+              <h2>Test Case Management</h2>
+              <p class="muted">Create cases, manage categories, and filter the test case tree.</p>
+            </div>
+            <button id="createCaseButton" type="button">New Case</button>
           </div>
-          <div id="caseDetailBody" class="caseDetailBody"></div>
-          <div class="formActions detailActions">
-            <button id="editSelectedCaseButton" class="secondary" type="button">Edit</button>
-            <button id="duplicateSelectedCaseButton" class="secondary" type="button">Duplicate</button>
-            <button id="deleteSelectedCaseButton" class="danger" type="button">Delete</button>
-          </div>
-        </div>
 
-        <div id="caseFormPanel" class="caseFormPanel" hidden>
-          <h2 id="caseFormTitle">Create Test Case</h2>
-          <form id="caseForm">
-            <div class="formGrid">
+          <div class="caseToolsGrid">
+            <form id="categoryForm" class="categoryForm">
               <label>
-                Test ID
-                <input id="caseTestId" placeholder="TC-PWR-001" />
+                New Category
+                <input id="categoryName" placeholder="Hardware" />
+              </label>
+              <button type="submit">Add</button>
+            </form>
+
+            <div class="caseToolbar">
+              <label>
+                Search
+                <input id="caseSearch" placeholder="Test ID, title, category" />
               </label>
               <label>
                 Priority
-                <select id="casePriority">
+                <select id="casePriorityFilter">
+                  <option value="">All priorities</option>
                   <option value="Critical">Critical</option>
                   <option value="High">High</option>
-                  <option value="Medium" selected>Medium</option>
+                  <option value="Medium">Medium</option>
                   <option value="Low">Low</option>
                 </select>
               </label>
+              <button id="clearCaseFiltersButton" class="secondary" type="button">Clear Filters</button>
             </div>
-            <div class="formGrid">
-              <label>
-                Category
-                <select id="caseCategory">
-                  <option value="">Uncategorized</option>
-                </select>
-              </label>
-              <label>
-                Title
-                <input id="caseTitle" required placeholder="Verify Power On/Off Function" />
-              </label>
+          </div>
+        </section>
+
+        <aside class="panel caseDetailPane">
+          <div id="caseDetailEmpty" class="emptyState">
+            <h2>Select a Test Case</h2>
+            <p class="muted">Choose a case from the list to view details, edit, duplicate, or delete it.</p>
+          </div>
+
+          <div id="caseDetailContent" hidden>
+            <div class="sectionHeader">
+              <h2 id="selectedCaseTitle">Test Case Detail</h2>
+              <span id="selectedCasePriority"></span>
             </div>
-            <div class="stepEditorSection">
-              <div class="formSectionHeader">
-                <h3>Steps</h3>
-                <button id="addStepButton" class="secondary" type="button">Add Step</button>
+            <div id="caseDetailBody" class="caseDetailBody"></div>
+            <div class="formActions detailActions">
+              <button id="editSelectedCaseButton" class="secondary" type="button">Edit</button>
+              <button id="duplicateSelectedCaseButton" class="secondary" type="button">Duplicate</button>
+              <button id="deleteSelectedCaseButton" class="danger" type="button">Delete</button>
+            </div>
+          </div>
+
+          <div id="caseFormPanel" class="caseFormPanel" hidden>
+            <h2 id="caseFormTitle">Create Test Case</h2>
+            <form id="caseForm">
+              <div class="formGrid">
+                <label>
+                  Test ID
+                  <input id="caseTestId" placeholder="TC-PWR-001" />
+                </label>
+                <label>
+                  Priority
+                  <select id="casePriority">
+                    <option value="Critical">Critical</option>
+                    <option value="High">High</option>
+                    <option value="Medium" selected>Medium</option>
+                    <option value="Low">Low</option>
+                  </select>
+                </label>
               </div>
-              <div id="caseStepRows" class="stepEditorRows"></div>
-            </div>
+              <div class="formGrid">
+                <label>
+                  Category
+                  <select id="caseCategory">
+                    <option value="">Uncategorized</option>
+                  </select>
+                </label>
+                <label>
+                  Title
+                  <input id="caseTitle" required placeholder="Verify Power On/Off Function" />
+                </label>
+              </div>
+              <div class="stepEditorSection">
+                <div class="formSectionHeader">
+                  <h3>Steps</h3>
+                  <button id="addStepButton" class="secondary" type="button">Add Step</button>
+                </div>
+                <div id="caseStepRows" class="stepEditorRows"></div>
+              </div>
+              <label>
+                Test Data
+                <textarea id="caseTestData" placeholder="N/A or DHCP, Static"></textarea>
+              </label>
+              <div class="formActions">
+                <button id="caseSubmitButton" type="submit">Create Case</button>
+                <button id="cancelCaseEditButton" class="secondary" type="button">
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <div class="importPanel">
+            <h2>Import CSV</h2>
+            <p class="muted">Columns: test_id, category, title, priority, steps, expected_result, test_data</p>
             <label>
-              Test Data
-              <textarea id="caseTestData" placeholder="N/A or DHCP, Static"></textarea>
+              CSV File
+              <input id="caseCsvFile" type="file" accept=".csv,text/csv" />
             </label>
             <div class="formActions">
-              <button id="caseSubmitButton" type="submit">Create Case</button>
-              <button id="cancelCaseEditButton" class="secondary" type="button">
-                Cancel
+              <button id="downloadCsvTemplateButton" class="secondary" type="button">
+                Download Template
               </button>
+              <button id="previewCsvButton" type="button">Preview CSV</button>
             </div>
-          </form>
-        </div>
-
-        <div class="importPanel">
-          <h2>Import CSV</h2>
-          <p class="muted">Columns: test_id, category, title, priority, steps, expected_result, test_data</p>
-          <label>
-            CSV File
-            <input id="caseCsvFile" type="file" accept=".csv,text/csv" />
-          </label>
-          <div class="formActions">
-            <button id="downloadCsvTemplateButton" class="secondary" type="button">
-              Download Template
-            </button>
-            <button id="previewCsvButton" type="button">Preview CSV</button>
           </div>
-        </div>
-      </aside>
-    </main>
+        </aside>
+      </main>
+    </div>
 
     <div id="csvPreviewModal" class="modalOverlay" hidden>
       <section class="modalDialog csvPreviewDialog" role="dialog" aria-modal="true" aria-labelledby="csvPreviewTitle">

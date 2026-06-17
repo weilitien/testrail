@@ -93,7 +93,6 @@ export const elements = {
   executionEmptyPanel: document.querySelector("#executionEmptyPanel"),
   selectedExecutionLabel: document.querySelector("#selectedExecutionLabel"),
   exportExecutionReportButton: document.querySelector("#exportExecutionReportButton"),
-  refreshButton: document.querySelector("#refreshButton"),
   toast: document.querySelector("#toast"),
 };
 

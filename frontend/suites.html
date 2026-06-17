@@ -7,41 +7,52 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <header class="topbar">
-      <div class="brand">
-        <img class="brandIcon" src="assets/app-icon.jpg" alt="Mini TestRail icon" />
-        <div>
-          <h1>Mini TestRail</h1>
-          <p>Manage test cases, suites, executions, results, and history.</p>
-        </div>
-      </div>
-      <nav class="topnav">
-        <a href="index.html">Test Cases</a>
-        <a class="active" href="suites.html">Test Suites</a>
-        <a href="executions.html">Executions</a>
-        <button id="refreshButton" type="button">Refresh</button>
-      </nav>
-    </header>
+    <div class="appShell">
+      <aside class="appSidebar">
+        <header class="topbar">
+          <div class="brand">
+            <img class="brandIcon" src="assets/app-icon.jpg" alt="Mini TestRail icon" />
+            <div>
+              <h1>Mini TestRail</h1>
+              <p>Manage test cases, suites, executions, results, and history.</p>
+            </div>
+          </div>
+          <nav class="topnav">
+            <a class="navItem" href="index.html">
+              <span class="navIcon">TC</span>
+              <span>Test Cases</span>
+            </a>
+            <a class="navItem active" href="suites.html">
+              <span class="navIcon">TS</span>
+              <span>Test Suites</span>
+            </a>
+            <a class="navItem" href="executions.html">
+              <span class="navIcon">ER</span>
+              <span>Test Runs & Results</span>
+            </a>
+          </nav>
+        </header>
 
-    <main class="suiteWorkspace">
-      <aside class="panel suiteNavigatorPane">
-        <div class="sectionHeader">
-          <h2>Test Suites</h2>
-          <span id="suiteCount" class="muted"></span>
-        </div>
-        <div class="executionToolbar">
-          <label>
-            Search
-            <input id="suiteSearch" placeholder="Suite name or description" />
-          </label>
-          <button id="clearSuiteSearchButton" class="secondary" type="button">
-            Clear
-          </button>
-        </div>
-        <div id="suiteList" class="suiteNavList"></div>
+        <section class="panel suiteNavigatorPane">
+          <div class="sectionHeader">
+            <h2>Test Suites</h2>
+            <span id="suiteCount" class="muted"></span>
+          </div>
+          <div class="executionToolbar">
+            <label>
+              Search
+              <input id="suiteSearch" placeholder="Suite name or description" />
+            </label>
+            <button id="clearSuiteSearchButton" class="secondary" type="button">
+              Clear
+            </button>
+          </div>
+          <div id="suiteList" class="suiteNavList"></div>
+        </section>
       </aside>
 
-      <section class="panel suiteDetailPane">
+      <main class="appMain suiteWorkspace">
+        <section class="panel suiteDetailPane">
         <div id="suiteDetailEmpty" class="emptyState">
           <h2>Create a Test Suite</h2>
           <p class="muted">
@@ -110,8 +121,9 @@
             </div>
           </form>
         </div>
-      </section>
-    </main>
+        </section>
+      </main>
+    </div>
 
     <div id="toast" class="toast" hidden></div>
     <script src="env.js"></script>

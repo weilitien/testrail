@@ -26,6 +26,7 @@ The app has three main workspaces:
 - Delete test cases
 - Import test cases from CSV
 - Preview CSV imports before confirming
+- Automatic test case version number updates when a test case is edited
 - Create, rename, and delete categories
 - Search test cases by Test ID, title, or category
 - Filter test cases by priority
@@ -46,6 +47,8 @@ Test cases include:
 - Create reusable test suites
 - Edit test suite name and description
 - Add or remove test cases from a suite with searchable, category-grouped checkboxes
+- Review selected suite cases grouped by category before saving
+- Remove selected suite cases directly from the suite edit panel
 - Browse suites from a left-side suite list
 - View suite contents grouped by category
 - Delete test suites without deleting the original test cases
@@ -64,11 +67,20 @@ Test cases include:
 - Review execution results grouped by category with expandable sections
 - Bulk update execution results selected from the left-side execution tree
 - Select one result from the left-side execution tree and edit it in the `Selected Result` panel
+- View the frozen test case version used by each execution result
 - Update result status: `NOT_RUN`, `PASS`, `FAIL`, `BLOCKED`, `SKIPPED`
 - Add actual result notes
 - View execution history
 
 The frontend does not display internal database IDs for executions or test cases. It shows user-facing names and Test IDs instead.
+
+The UI uses one unified left sidebar with tree-style workspace navigation and the current page's list or tree. The right side stays focused on the selected item's detail, editor, and related actions.
+
+### Test Case Versioning
+
+Executions use frozen test case snapshots.
+
+When a test case is edited, its `current_version` increases. Existing executions keep the test case title, priority, steps, expected result, test data, and version that were captured when the execution item was created. This prevents old test results from silently changing when the reusable test case is updated later.
 
 ## Current UI
 
@@ -82,8 +94,8 @@ http://localhost:5173/index.html
 
 Layout:
 
-- Left: category manager plus searchable test case tree grouped by category
-- Right: selected test case detail, create/edit form with category dropdown, and CSV import
+- Left sidebar: workspace navigation and searchable test case tree grouped by category
+- Main panel: category manager, search filters, create/edit test case tools, selected test case detail, and CSV import
 
 ### Executions Page
 
@@ -95,10 +107,11 @@ http://localhost:5173/executions.html
 
 Layout:
 
-- Left: execution tree. The selected execution expands to show its test cases and result statuses
-- Center: selected execution detail with collapsible add/bulk tools and a focused selected result editor
-- Bottom of the center area: history and run summary
-- Create execution opens in the center panel with selectable test cases
+- Left sidebar: workspace navigation and execution tree. The selected execution expands to show its test cases and result statuses
+- Main panel: selected execution detail with collapsible add/bulk tools and a focused selected result editor
+- Bottom of the main panel: history and run summary
+- Create execution opens in the main panel with selectable test cases
+- Selected result detail shows the frozen test case version used for that run
 
 ### Test Suites Page
 
@@ -110,9 +123,10 @@ http://localhost:5173/suites.html
 
 Layout:
 
-- Left: searchable test suite list
-- Center: selected suite detail and create/edit form
+- Left sidebar: workspace navigation and searchable test suite list
+- Main panel: selected suite detail and create/edit form
 - Test case picker: searchable and grouped by category
+- Selected suite cases: grouped by category with quick remove buttons
 
 ## Project Structure
 
@@ -444,6 +458,7 @@ The Test Cases page also provides a `Download Template` button and a modal previ
 ```
 
 The backend creates the execution and related execution items in one request. Each new result starts with `NOT_RUN`.
+Each execution item stores a snapshot of the selected test case at creation time.
 
 Execution names must be unique. If a duplicate name is submitted, the API returns:
 
@@ -485,4 +500,5 @@ Bulk updates also write one history entry per updated result.
 - Deleting a category does not delete test cases. Related test cases become Uncategorized.
 - Deleting a test case also removes related execution items and history through cascading deletes.
 - Deleting an execution also removes its results and history.
+- Existing executions keep frozen test case snapshots. Editing a reusable test case does not rewrite historical execution results.
 - The frontend is intentionally plain HTML/CSS/JavaScript with native ES modules, so no build step is required.

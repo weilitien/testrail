@@ -1,0 +1,342 @@
+.caseToolbar {
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) 180px auto;
+  gap: 12px;
+  align-items: end;
+  margin-bottom: 14px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--control-bg);
+}
+
+.caseNavigatorPane .caseToolbar {
+  grid-template-columns: 1fr;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 10px;
+}
+
+.caseNavigatorPane .caseToolbar button {
+  width: 100%;
+}
+
+.categoryTree {
+  display: grid;
+  gap: 8px;
+}
+
+.categoryForm {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--control-bg);
+}
+
+.categoryForm label {
+  font-size: 12px;
+}
+
+.categoryForm button {
+  min-height: 38px;
+  padding-inline: 12px;
+}
+
+.caseCategoryRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px;
+  align-items: center;
+}
+
+.caseCategoryButton {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+  padding: 9px 10px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  font-weight: 700;
+}
+
+.caseCategoryButton span:not(.treeToggle) {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.caseCategoryButton.hasToggle span:not(.treeToggle) {
+  width: fit-content;
+  max-width: 100%;
+  border-radius: 999px;
+  padding: 5px 11px;
+  background: var(--control-bg);
+  color: #25313a;
+}
+
+.caseCategoryButton:hover,
+.caseCategoryRow.active .caseCategoryButton {
+  border-color: var(--line);
+  background: var(--control-bg);
+}
+
+.categoryActions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+  padding: 0;
+}
+
+.categoryActions .iconButton {
+  min-height: 24px;
+  padding: 4px 9px;
+  font-size: 11px;
+  box-shadow: none;
+}
+
+.caseCategoryButton strong {
+  min-width: 26px;
+  border-radius: 999px;
+  padding: 2px 7px;
+  background: #ffffff;
+  color: var(--muted);
+  text-align: center;
+  font-size: 12px;
+}
+
+.caseCategoryButton .treeToggle {
+  width: 20px;
+  height: 20px;
+}
+
+.treeToggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--muted);
+  font-weight: 900;
+}
+
+.caseCategoryButton.noToggle {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.caseCategoryGroup {
+  display: grid;
+  gap: 6px;
+}
+
+.caseTreeCaseList {
+  display: grid;
+  gap: 6px;
+  padding-left: 14px;
+}
+
+.caseTreeCase {
+  display: grid;
+  grid-template-columns: minmax(96px, 0.9fr) minmax(0, 1.35fr) auto;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 9px;
+  background: var(--panel-soft);
+  color: var(--text);
+  text-align: left;
+  box-shadow: none;
+}
+
+.caseTreeCase:hover,
+.caseTreeCase.selected {
+  border-color: var(--accent);
+  background: #e5f1ff;
+}
+
+.caseTreeCase:hover:not(.selected) {
+  background: var(--warm-hover-bg);
+}
+
+.caseTreeCase .caseId,
+.caseTreeCase strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.caseTreeCase .caseId {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.caseTreeCase strong {
+  font-size: 12px;
+  justify-self: start;
+  line-height: 1.25;
+}
+
+.caseTreeCase .priority {
+  min-width: 0;
+  padding: 4px 8px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.treeEmptyState {
+  margin: 6px 2px 0;
+  padding: 10px;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  background: var(--panel-soft);
+}
+
+.caseDetailBody {
+  display: grid;
+  gap: 14px;
+}
+
+.caseDetailBody h3 {
+  margin-bottom: 0;
+  line-height: 1.35;
+}
+
+.detailBlock {
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+}
+
+.detailBlock strong {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.detailBlock p {
+  margin-bottom: 0;
+  color: var(--muted);
+  white-space: pre-wrap;
+}
+
+.detailActions {
+  margin-top: 16px;
+}
+
+.caseFormPanel {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
+.stepEditorSection {
+  display: grid;
+  gap: 10px;
+}
+
+.stepEditorSection h3 {
+  margin-bottom: 0;
+  font-size: 16px;
+}
+
+.stepEditorRows {
+  display: grid;
+  gap: 10px;
+}
+
+.stepEditorRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: end;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px;
+  background: var(--control-bg);
+}
+
+.stepEditorRow textarea {
+  min-height: 72px;
+}
+
+.removeStepButton {
+  align-self: center;
+}
+
+.stepsTable {
+  display: grid;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.stepsTableHeader,
+.stepsTableRow {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0;
+}
+
+.stepsTableHeader {
+  background: var(--control-bg);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.stepsTableHeader span,
+.stepsTableRow span,
+.stepsTableRow p {
+  min-width: 0;
+  margin: 0;
+  border-top: 1px solid var(--line);
+  padding: 9px 10px;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.stepsTableHeader span {
+  border-top: 0;
+}
+
+.stepsTableRow span {
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.emptyState {
+  padding: 16px 0;
+}
+
+.importPanel {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
+.importPanel h2 {
+  margin-bottom: 0;
+}
+
+.importPanel p {
+  margin-bottom: 0;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.importPanel button {
+  justify-self: start;
+}

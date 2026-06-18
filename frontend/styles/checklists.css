@@ -1,0 +1,83 @@
+.checklist {
+  display: grid;
+  gap: 8px;
+  max-height: 260px;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px;
+  background: var(--control-bg);
+}
+
+.checklistCategoryGroup {
+  display: grid;
+  gap: 8px;
+}
+
+.checklistCategoryHeader {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: #ffffff;
+}
+
+.checklistCategoryHeader strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.checklistCategoryHeader > span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.checklistCategoryActions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.checklistCategoryItems {
+  display: grid;
+  gap: 8px;
+}
+
+.checkboxRow {
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  gap: 10px;
+  align-items: start;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px;
+  background: #ffffff;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 400;
+  cursor: pointer;
+}
+
+.checkboxRow input {
+  width: 18px;
+  height: 18px;
+  margin: 1px 0 0;
+  cursor: pointer;
+}
+
+.checkboxRow strong,
+.checkboxRow small {
+  display: block;
+}
+
+.checkboxRow small {
+  margin-top: 4px;
+  color: var(--muted);
+  line-height: 1.35;
+}

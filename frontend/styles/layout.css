@@ -1,0 +1,117 @@
+.caseWorkspace {
+  display: grid;
+  grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+  padding: 24px clamp(16px, 4vw, 48px);
+}
+
+.caseManagementWorkspace {
+  grid-template-columns: minmax(360px, 460px) minmax(0, 1fr);
+}
+
+.executionPageWorkspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+  padding: 24px clamp(16px, 4vw, 48px);
+}
+
+.executionManagementWorkspace {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.suiteWorkspace {
+  display: grid;
+  grid-template-columns: minmax(300px, 360px) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+  padding: 24px clamp(16px, 4vw, 48px);
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 18px;
+  box-shadow: 0 16px 38px rgb(17 19 24 / 8%);
+}
+
+[hidden] {
+  display: none !important;
+}
+
+.caseNavigatorPane,
+.caseDetailPane,
+.executionNavigatorPane,
+.suiteNavigatorPane,
+.suiteDetailPane {
+  position: sticky;
+  top: 78px;
+}
+
+.caseNavigatorPane {
+  min-width: 0;
+}
+
+.caseNavigatorPane,
+.caseDetailPane,
+.executionNavigatorPane,
+.suiteNavigatorPane,
+.suiteDetailPane {
+  max-height: calc(100vh - 102px);
+  overflow: auto;
+}
+
+.appSidebar .caseNavigatorPane,
+.appSidebar .executionNavigatorPane,
+.appSidebar .suiteNavigatorPane {
+  position: static;
+  margin-left: 22px;
+  border: 0;
+  border-left: 1px solid var(--tree-line);
+  border-radius: 0;
+  padding: 10px 0 0 16px;
+  background: transparent;
+  max-height: none;
+  overflow: visible;
+}
+
+.appSidebar .panel {
+  border-radius: 8px;
+  padding: 14px;
+  box-shadow: none;
+}
+
+.appSidebar .sectionHeader {
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.appSidebar h2 {
+  margin-bottom: 0;
+  font-size: 17px;
+}
+
+.appSidebar .caseNavigatorPane > .sectionHeader,
+.appSidebar .executionNavigatorPane > .sectionHeader,
+.appSidebar .suiteNavigatorPane > .sectionHeader {
+  padding: 0 0 2px;
+}
+
+.appSidebar .caseNavigatorPane > .sectionHeader h2,
+.appSidebar .executionNavigatorPane > .sectionHeader h2,
+.appSidebar .suiteNavigatorPane > .sectionHeader h2 {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.appSidebar .caseNavigatorPane > .sectionHeader .muted,
+.appSidebar .executionNavigatorPane > .sectionHeader .muted,
+.appSidebar .suiteNavigatorPane > .sectionHeader .muted {
+  font-size: 12px;
+  font-weight: 800;
+}

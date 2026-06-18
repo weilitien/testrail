@@ -1,5 +1,6 @@
 import { groupTestCasesByCategory } from "./checklists.js";
 import { getDisplaySteps, renderStepsTable } from "./caseDetails.js";
+import { renderCaseIdentity, renderTreeToggle } from "./treeUi.js";
 import { escapeHtml, formatDate } from "./utils.js";
 
 export function createCaseBrowserState() {
@@ -153,7 +154,7 @@ function createCaseCategoryGroup({ group, categoryRecord, state, callbacks }) {
   );
 
   const caseList = document.createElement("div");
-  caseList.className = "caseTreeItems";
+  caseList.className = "caseTreeCaseList";
   caseList.hidden = collapsed;
   for (const testCase of group.items) {
     caseList.appendChild(createCaseTreeItem(testCase, state, callbacks));
@@ -164,11 +165,10 @@ function createCaseCategoryGroup({ group, categoryRecord, state, callbacks }) {
 
 function createCaseTreeItem(testCase, state, callbacks) {
   const row = document.createElement("button");
-  row.className = `caseTreeItem ${state.selectedCaseId === testCase.id ? "selected" : ""}`;
+  row.className = `caseTreeCase ${state.selectedCaseId === testCase.id ? "selected" : ""}`;
   row.type = "button";
   row.innerHTML = `
-    <span class="caseId">${escapeHtml(testCase.test_id || "No Test ID")}</span>
-    <strong>${escapeHtml(testCase.title)}</strong>
+    ${renderCaseIdentity(testCase)}
     <span class="priority ${escapeHtml(testCase.priority || "Medium")}">
       ${escapeHtml(testCase.priority || "Medium")}
     </span>
@@ -194,19 +194,19 @@ function createCategoryTreeRow({
   onError,
 }) {
   const row = document.createElement("div");
-  row.className = `categoryRow ${active ? "active" : ""}`;
+  row.className = `caseCategoryRow ${active ? "active" : ""}`;
 
   const button = document.createElement("button");
-  button.className = `treeItem ${onToggle ? "hasToggle" : "noToggle"}`;
+  button.className = `caseCategoryButton ${onToggle ? "hasToggle" : "noToggle"}`;
   button.type = "button";
   button.innerHTML = `
-    ${onToggle ? `<span class="categoryToggle">${collapsed ? "+" : "-"}</span>` : ""}
+    ${onToggle ? renderTreeToggle(!collapsed) : ""}
     <span>${escapeHtml(label)}</span>
     <strong>${count}</strong>
   `;
   button.addEventListener("click", onClick);
   if (onToggle) {
-    button.querySelector(".categoryToggle").addEventListener("click", (event) => {
+    button.querySelector(".treeToggle").addEventListener("click", (event) => {
       event.stopPropagation();
       onToggle();
     });

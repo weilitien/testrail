@@ -21,6 +21,12 @@ import {
   previewTestCasesFromCsv,
 } from "./csvImport.js";
 import { elements, hasExecutionPage, hasSuitePage } from "./dom.js";
+import {
+  createTreeGroupSection,
+  renderNavBadge,
+  renderTreeEmptyState,
+  renderTreeToggle,
+} from "./treeUi.js";
 import { escapeHtml } from "./utils.js";
 import {
   getStatusCounts,
@@ -265,8 +271,8 @@ function renderExecutions() {
     row.className = `executionNavItem ${isSelectedExecution ? "selected" : ""}`;
     row.innerHTML = `
       <button class="executionNavButton" type="button" data-action="view">
-        <span class="categoryToggle">${isSelectedExecution ? "-" : "+"}</span>
-        <span class="navTypeLabel execution">Execution</span>
+        ${renderTreeToggle(isSelectedExecution)}
+        ${renderNavBadge("execution", "Execution")}
         <strong>${escapeHtml(execution.name)}</strong>
       </button>
       <div class="executionNavActions">
@@ -291,26 +297,22 @@ function createExecutionNavTree(items) {
   tree.className = "executionNavTree";
 
   if (!items.length) {
-    tree.innerHTML = "<p class='muted'>No test cases in this execution.</p>";
+    tree.innerHTML = renderTreeEmptyState("No test cases in this execution.");
     return tree;
   }
 
   for (const group of groupExecutionItemsByCategory(items)) {
-    const groupElement = document.createElement("section");
-    groupElement.className = "executionNavGroup";
-    groupElement.innerHTML = `
-      <div class="executionNavGroupHeader">
-        <strong>${escapeHtml(group.label)}</strong>
-        <span>${group.items.length}</span>
-      </div>
-      <div class="executionNavGroupItems"></div>
-    `;
-
-    const groupItems = groupElement.querySelector(".executionNavGroupItems");
-    for (const item of group.items) {
-      groupItems.appendChild(createExecutionNavResultItem(item));
-    }
-    tree.appendChild(groupElement);
+    tree.appendChild(
+      createTreeGroupSection({
+        group,
+        groupClassName: "executionNavGroup",
+        headerClassName: "executionNavGroupHeader",
+        itemsClassName: "executionNavGroupItems",
+        labelTag: "strong",
+        countTag: "span",
+        renderItem: createExecutionNavResultItem,
+      })
+    );
   }
 
   return tree;

@@ -3,6 +3,13 @@ import {
   groupTestCasesByCategory,
   renderGroupedCaseChecklist,
 } from "./checklists.js";
+import {
+  createTreeGroupSection,
+  renderCaseIdentity,
+  renderNavBadge,
+  renderTreeEmptyState,
+  renderTreeToggle,
+} from "./treeUi.js";
 import { escapeHtml } from "./utils.js";
 
 let testSuites = [];
@@ -47,8 +54,8 @@ export function renderTestSuites(elements, showToast, testCases) {
   elements.suiteList.innerHTML = visibleSuites.length
     ? ""
     : testSuites.length
-      ? "<p class='muted treeEmptyState'>No test suites match the current search.</p>"
-      : "<p class='muted treeEmptyState'>No test suites yet.</p>";
+      ? renderTreeEmptyState("No test suites match the current search.")
+      : renderTreeEmptyState("No test suites yet.");
 
   for (const suite of visibleSuites) {
     const isSelected = selectedSuiteId === suite.id;
@@ -63,8 +70,8 @@ export function renderTestSuites(elements, showToast, testCases) {
     button.className = `suiteNavItem ${isSelected ? "selected" : ""}`;
     button.type = "button";
     button.innerHTML = `
-      <span class="categoryToggle">${isSelected && !selectedSuiteTreeCollapsed ? "-" : "+"}</span>
-      <span class="navTypeLabel suite">Test Suite</span>
+      ${renderTreeToggle(isSelected && !selectedSuiteTreeCollapsed)}
+      ${renderNavBadge("suite", "Test Suite")}
       <strong>${escapeHtml(suite.name)}</strong>
       <small>${suite.total_cases || 0} case(s)</small>
     `;
@@ -85,36 +92,31 @@ export function renderTestSuites(elements, showToast, testCases) {
       caseList.className = "suiteTreeItems";
       caseList.innerHTML = selectedSuiteCases.length
         ? ""
-        : "<p class='muted treeEmptyState'>No test cases in this suite.</p>";
+        : renderTreeEmptyState("No test cases in this suite.");
 
       for (const group of groupTestCasesByCategory(selectedSuiteCases)) {
-        const groupElement = document.createElement("section");
-        groupElement.className = "suiteTreeCaseGroup";
-        groupElement.innerHTML = `
-          <div class="suiteTreeCaseHeader">
-            <span>${escapeHtml(group.label)}</span>
-            <strong>${group.items.length}</strong>
-          </div>
-          <div class="suiteTreeCaseItems"></div>
-        `;
-
-        const groupItems = groupElement.querySelector(".suiteTreeCaseItems");
-        for (const testCase of group.items) {
-          const row = document.createElement("article");
-          row.className = "suiteTreeCaseItem";
-          row.innerHTML = `
-            <span class="caseId">${escapeHtml(testCase.test_id || "No Test ID")}</span>
-            <strong>${escapeHtml(testCase.title)}</strong>
-          `;
-          groupItems.appendChild(row);
-        }
-        caseList.appendChild(groupElement);
+        caseList.appendChild(
+          createTreeGroupSection({
+            group,
+            groupClassName: "suiteTreeCaseGroup",
+            headerClassName: "suiteTreeCaseHeader",
+            itemsClassName: "suiteTreeCaseItems",
+            renderItem: createSuiteTreeCaseItem,
+          })
+        );
       }
       wrapper.appendChild(caseList);
     }
 
     elements.suiteList.appendChild(wrapper);
   }
+}
+
+function createSuiteTreeCaseItem(testCase) {
+  const row = document.createElement("article");
+  row.className = "suiteTreeCaseItem";
+  row.innerHTML = renderCaseIdentity(testCase);
+  return row;
 }
 
 export function renderExecutionSuiteSelect(elements) {

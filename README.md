@@ -164,9 +164,22 @@ frontend/
   suites.js
   testCaseActions.js
   testCaseForm.js
+  treeUi.js
   utils.js
   nginx.conf
   netlify.toml
+  styles/
+    base.css
+    components.css
+    checklists.css
+    layout.css
+    overlays.css
+    reports.css
+    responsive.css
+    sidebar.css
+    suites.css
+    executions.css
+    test-cases.css
   assets/
     app-icon.jpg
     icon-test-case.svg

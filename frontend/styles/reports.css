@@ -1,0 +1,247 @@
+.summaryGrid,
+.summaryStats {
+  display: grid;
+  gap: 12px;
+}
+
+.summaryGrid {
+  grid-template-columns: 1fr;
+}
+
+.summaryStats {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.summaryDashboard {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.8fr) minmax(260px, 1.2fr);
+  gap: 12px;
+}
+
+.passRatePanel,
+.statusChart,
+.failedCategoryPanel {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 16px;
+  background: var(--panel-soft);
+}
+
+.passRatePanel {
+  display: grid;
+  gap: 12px;
+  justify-items: center;
+  text-align: center;
+}
+
+.passRatePanel strong,
+.statusChart > strong,
+.failedCategoryPanel > strong,
+.summaryPanelHeader strong {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 15px;
+}
+
+.passRatePanel p {
+  margin-bottom: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.passRateDonut {
+  display: grid;
+  place-items: center;
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at center, var(--panel-soft) 0 57%, transparent 58%),
+    conic-gradient(var(--donut-segments, #dce8ec 0 100%));
+}
+
+.passRateDonut span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 56px;
+  font-size: 22px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  line-height: 1;
+  text-align: center;
+}
+
+.statusChart {
+  display: grid;
+  gap: 12px;
+}
+
+.failedCategoryPanel {
+  display: grid;
+  gap: 12px;
+}
+
+.failedCategoryPanel .muted {
+  margin-bottom: 0;
+}
+
+.summaryPanelHeader {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.summaryPanelHeader strong {
+  margin-bottom: 0;
+}
+
+.summaryPanelHeader span {
+  border-radius: 999px;
+  padding: 4px 9px;
+  background: #fde7e9;
+  color: #a2191f;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.failedCategoryList {
+  display: grid;
+  gap: 10px;
+}
+
+.failedCategoryRow {
+  display: grid;
+  gap: 6px;
+}
+
+.failedCategoryMeta {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.failedCategoryMeta strong {
+  min-width: 0;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.failedCategoryRow small {
+  color: #a2191f;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.failedCategoryTrack {
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #f6d6d9;
+}
+
+.failedCategoryFill {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--fail);
+}
+
+.statusBarRow {
+  display: grid;
+  gap: 6px;
+}
+
+.statusBarMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.statusBarTrack {
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #dce8ec;
+}
+
+.statusBarFill {
+  height: 100%;
+  border-radius: inherit;
+}
+
+.statusBarFill.NOT_RUN {
+  background: var(--not-run);
+}
+
+.statusBarFill.PASS {
+  background: var(--pass);
+}
+
+.statusBarFill.FAIL {
+  background: var(--fail);
+}
+
+.statusBarFill.BLOCKED {
+  background: var(--blocked);
+}
+
+.statusBarFill.SKIPPED {
+  background: var(--skipped);
+}
+
+.summaryBox strong {
+  display: block;
+  margin-top: 6px;
+  font-size: 24px;
+}
+
+.status {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 4px 9px;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.status.NOT_RUN {
+  background: var(--not-run);
+}
+
+.status.PASS {
+  background: var(--pass);
+}
+
+.status.FAIL {
+  background: var(--fail);
+}
+
+.status.BLOCKED {
+  background: var(--blocked);
+}
+
+.status.SKIPPED {
+  background: var(--skipped);
+}
+
+.toast {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  max-width: 360px;
+  border-radius: 8px;
+  padding: 12px 14px;
+  background: #111318;
+  color: #ffffff;
+  box-shadow: 0 10px 24px rgb(17 19 24 / 18%);
+}
+

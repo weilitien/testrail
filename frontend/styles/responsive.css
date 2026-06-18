@@ -1,0 +1,190 @@
+@media (max-width: 1180px) {
+  .caseManagementWorkspace {
+    grid-template-columns: minmax(320px, 380px) minmax(0, 1fr);
+  }
+
+  .executionManagementWorkspace {
+    grid-template-columns: minmax(300px, 340px) minmax(0, 1fr);
+  }
+
+  .executionCreatorPane {
+    max-height: none;
+  }
+
+  .executionWorkspace {
+    grid-template-columns: 1fr;
+  }
+
+  .resultDetailPane {
+    grid-column: 1 / -1;
+    position: static;
+  }
+
+  .caseTreeCase {
+    grid-template-columns: minmax(72px, 0.7fr) minmax(0, 1.3fr);
+  }
+
+  .caseTreeCase .priority {
+    grid-column: 2;
+  }
+
+  .stepEditorRow {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 780px) {
+  .appShell {
+    grid-template-columns: 1fr;
+  }
+
+  .appSidebar {
+    position: static;
+    max-height: none;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .appMain {
+    padding: 16px;
+  }
+
+  .topbar,
+  .sectionHeader {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .brand {
+    align-items: flex-start;
+  }
+
+  .topnav {
+    justify-content: flex-start;
+  }
+
+  .caseWorkspace,
+  .caseManagementWorkspace,
+  .executionPageWorkspace,
+  .executionManagementWorkspace,
+  .suiteWorkspace,
+  .formGrid,
+  .caseToolsGrid,
+  .caseToolbar,
+  .executionToolbar,
+  .addCaseFilters,
+  .suitePickerPanel,
+  .bulkResultBar,
+  .resultEditorControls,
+  .executionWorkspace,
+  .summaryGrid,
+  .summaryStats,
+  .summaryDashboard {
+    grid-template-columns: 1fr;
+  }
+
+  .caseNavigatorPane,
+  .caseDetailPane,
+  .executionNavigatorPane,
+  .suiteNavigatorPane,
+  .suiteDetailPane,
+  .executionDetailPane,
+  .executionCreatorPane,
+  .resultDetailPane,
+  .historyPane {
+    position: static;
+    max-height: none;
+  }
+
+  .caseTreeCaseList {
+    padding-left: 10px;
+  }
+
+  .caseTreeCase {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .caseTreeCase .priority {
+    grid-column: auto;
+  }
+
+  .stepsTableHeader {
+    display: none;
+  }
+
+  .stepsTableRow {
+    grid-template-columns: 1fr;
+  }
+
+  .stepsTableRow span {
+    background: var(--control-bg);
+  }
+
+  .previewTableHeader {
+    display: none;
+  }
+
+  .modalOverlay {
+    align-items: stretch;
+    padding: 12px;
+  }
+
+  .modalDialog {
+    max-height: calc(100vh - 24px);
+  }
+
+  .modalHeader,
+  .resultEditorHeader,
+  .modalActions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .resultEditorMeta {
+    justify-content: flex-start;
+  }
+
+  .previewTable {
+    min-width: 0;
+  }
+
+  .previewTableRow {
+    grid-template-columns: 1fr;
+  }
+
+  .checklistCategoryHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .checklistCategoryActions {
+    justify-content: flex-start;
+  }
+
+  .executionNavItem,
+  .executionWorkspace {
+    grid-template-columns: 1fr;
+  }
+
+  .historyPane {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 520px) {
+  .executionNavHeader,
+  .executionToolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .executionNavHeader h2 {
+    margin-top: 0;
+  }
+
+  .executionNavHeader .headerActions,
+  .executionNavHeader button {
+    justify-items: stretch;
+    width: 100%;
+  }
+}

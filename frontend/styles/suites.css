@@ -1,0 +1,69 @@
+.suiteNavList,
+.suiteCasePicker {
+  display: grid;
+  gap: 10px;
+}
+
+.suiteCasePicker {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  background: var(--control-bg);
+}
+
+.suiteCasePicker .checklist {
+  max-height: min(62vh, 720px);
+}
+
+.suitePickerPanel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: end;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  background: var(--control-bg);
+}
+
+.suiteNavItem {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px 10px;
+  align-items: center;
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 11px;
+  background: #ffffff;
+  color: var(--text);
+  text-align: left;
+  box-shadow: none;
+}
+
+.suiteNavItem:hover,
+.suiteNavItem.selected {
+  border-color: var(--accent);
+  background: var(--warm-hover-bg);
+}
+
+.suiteNavItem .navBadge {
+  grid-column: 1 / -1;
+}
+
+.suiteNavItem strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 16px;
+  line-height: 1.2;
+}
+
+.suiteNavItem small {
+  color: var(--muted);
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.suiteFormPanel {
+  margin-top: 18px;
+}

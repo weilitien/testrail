@@ -1,0 +1,278 @@
+.appSidebar .executionToolbar {
+  border: 0;
+  border-radius: 7px;
+  padding: 8px;
+  background: var(--control-bg);
+}
+
+.appSidebar .suiteNavItem,
+.appSidebar .executionNavItem,
+.appSidebar .caseTreeCase {
+  border-color: transparent;
+  border-radius: 7px;
+  background: transparent;
+}
+
+.appSidebar .suiteNavItem:hover,
+.appSidebar .suiteNavItem.selected,
+.appSidebar .executionNavItem:hover,
+.appSidebar .executionNavItem.selected,
+.appSidebar .caseTreeCase:hover {
+  border-color: transparent;
+  background: var(--nav-active-bg);
+}
+
+.appSidebar .caseTreeCase.selected {
+  border-color: var(--nav-active);
+  background: var(--nav-selected-bg);
+  box-shadow:
+    inset 4px 0 0 var(--nav-active),
+    0 8px 18px rgb(31 112 209 / 12%);
+}
+
+.appSidebar .caseTreeCase.selected .caseId,
+.appSidebar .caseTreeCase.selected strong {
+  color: var(--nav-active-strong);
+}
+
+.appSidebar .suiteNavItem {
+  grid-template-columns: auto minmax(0, auto) minmax(0, 1fr) auto;
+  gap: 7px;
+  align-items: center;
+  padding: 7px 9px;
+}
+
+.appSidebar .suiteNavItem .navBadge {
+  grid-column: auto;
+}
+
+.appSidebar .suiteNavItem strong {
+  font-size: 13px;
+}
+
+.appSidebar .suiteNavItem small {
+  font-size: 12px;
+}
+
+.appSidebar .suiteTreeGroup,
+.appSidebar .suiteTreeCaseGroup,
+.appSidebar .suiteTreeCaseItems,
+.appSidebar .executionNavGroup,
+.appSidebar .executionNavGroupItems {
+  display: grid;
+  gap: 2px;
+}
+
+.appSidebar .suiteTreeItems,
+.appSidebar .caseTreeCaseList,
+.appSidebar .executionNavTree {
+  display: grid;
+  gap: 5px;
+  border-left: 1px solid var(--tree-line);
+  margin-left: 10px;
+  padding: 4px 0 4px 12px;
+}
+
+.appSidebar .suiteTreeCaseHeader,
+.appSidebar .executionNavGroupHeader {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px;
+  align-items: center;
+  padding: 5px 7px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.appSidebar .suiteTreeCaseHeader strong,
+.appSidebar .executionNavGroupHeader span {
+  min-width: 22px;
+  border-radius: 999px;
+  padding: 2px 7px;
+  background: #ffffff;
+  color: var(--muted);
+  text-align: center;
+  font-size: 11px;
+}
+
+.appSidebar .suiteTreeCaseItem,
+.appSidebar .caseTreeCase {
+  display: grid;
+  gap: 7px;
+  align-items: center;
+  border-radius: 7px;
+}
+
+.appSidebar .suiteTreeCaseItem:hover {
+  background: var(--nav-active-bg);
+}
+
+.appSidebar .suiteTreeCaseItem .caseId,
+.appSidebar .caseTreeCase .caseId {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.appSidebar .suiteTreeCaseItem strong,
+.appSidebar .caseTreeCase strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.appSidebar .suiteTreeCaseItem {
+  grid-template-columns: minmax(78px, 0.85fr) minmax(0, 1.15fr);
+  padding: 5px 7px;
+}
+
+.appSidebar .suiteTreeCaseItem .caseId {
+  font-weight: 900;
+}
+
+.appSidebar .executionNavItem {
+  padding: 6px 7px;
+}
+
+.appSidebar .executionNavItem:not(.selected) .executionNavActions {
+  display: none;
+}
+
+.appSidebar .executionNavButton strong {
+  font-size: 13px;
+}
+
+.appSidebar .executionNavActions button {
+  padding: 5px 8px;
+}
+
+.appSidebar .executionNavTree {
+  border-top: 0;
+  margin-top: 2px;
+  padding-top: 6px;
+  padding-left: 18px;
+}
+
+.appSidebar .categoryTree {
+  gap: 4px;
+}
+
+.appSidebar .caseCategoryRow {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 3px;
+}
+
+.appSidebar .caseCategoryButton {
+  padding: 7px 9px;
+}
+
+.appSidebar .caseCategoryButton.hasToggle span:not(.treeToggle) {
+  background: transparent;
+  padding: 0;
+}
+
+.appSidebar .caseCategoryButton strong {
+  min-width: 22px;
+  background: #ffffff;
+  font-size: 11px;
+}
+
+.appSidebar .caseCategoryRow.active .caseCategoryButton,
+.appSidebar .caseCategoryButton:hover {
+  border-color: transparent;
+  background: var(--nav-active-bg);
+  color: var(--nav-active);
+}
+
+.appSidebar .categoryActions {
+  justify-content: flex-start;
+  margin-left: 28px;
+  gap: 8px;
+}
+
+.appSidebar .categoryActions .iconButton {
+  min-height: 0;
+  border: 0;
+  padding: 2px 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 11px;
+  box-shadow: none;
+}
+
+.appSidebar .categoryActions .iconButton:hover {
+  background: transparent;
+  color: var(--nav-active);
+}
+
+.appSidebar .categoryActions .dangerText:hover {
+  color: #a12b16;
+}
+
+.appSidebar .caseTreeCase {
+  grid-template-columns: minmax(88px, 0.85fr) minmax(0, 1.15fr);
+  padding: 6px 8px;
+}
+
+.appSidebar .caseTreeCase .priority {
+  display: none;
+}
+
+.appSidebar .navGroup > .panel {
+  margin: 0 0 2px 22px;
+  border: 0;
+  border-left: 1px solid var(--tree-line);
+  border-radius: 0;
+  padding: 4px 0 4px 16px;
+  background: transparent;
+  box-shadow: none;
+}
+
+.appSidebar .navGroup > .caseNavigatorPane,
+.appSidebar .navGroup > .executionNavigatorPane,
+.appSidebar .navGroup > .suiteNavigatorPane {
+  position: static;
+  max-height: none;
+  overflow: visible;
+}
+
+.appSidebar .navGroup > .panel > .sectionHeader {
+  min-height: 0;
+  margin-bottom: 6px;
+  padding: 0 0 0 2px;
+}
+
+.appSidebar .navGroup > .panel > .sectionHeader h2 {
+  display: none;
+}
+
+.appSidebar .navGroup > .panel > .sectionHeader .muted {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.appSidebar .navGroup > .executionNavigatorPane > .sectionHeader {
+  align-items: stretch;
+}
+
+.appSidebar .navGroup > .executionNavigatorPane .headerActions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+  width: 100%;
+}
+
+.appSidebar .navGroup > .executionNavigatorPane .headerActions .muted {
+  justify-self: end;
+}
+
+.appSidebar .navGroup > .executionNavigatorPane .headerActions button {
+  width: 100%;
+  padding: 7px 9px;
+  font-size: 12px;
+}

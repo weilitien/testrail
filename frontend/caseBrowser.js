@@ -117,16 +117,18 @@ function createCaseCategoryGroup({ group, categoryRecord, state, callbacks }) {
   const groupElement = document.createElement("section");
   groupElement.className = "caseCategoryGroup";
   const collapsed = state.collapsedCategories.has(group.category);
+  const active =
+    state.selectedCaseGroup.type === "category" &&
+    state.selectedCaseGroup.category === group.category;
 
   groupElement.appendChild(
     createCategoryTreeRow({
       label: group.label,
       count: group.items.length,
-      active:
-        state.selectedCaseGroup.type === "category" &&
-        state.selectedCaseGroup.category === group.category,
+      active,
       collapsed,
       onToggle: () => {
+        state.selectedCaseGroup = { type: "category", category: group.category };
         if (collapsed) {
           state.collapsedCategories.delete(group.category);
         } else {
@@ -136,8 +138,14 @@ function createCaseCategoryGroup({ group, categoryRecord, state, callbacks }) {
       },
       onClick: () => {
         state.selectedCaseGroup = { type: "category", category: group.category };
+        if (collapsed) {
+          state.collapsedCategories.delete(group.category);
+        } else if (active) {
+          state.collapsedCategories.add(group.category);
+        }
         callbacks.renderTestCases();
       },
+      showActions: active && !collapsed,
       onRename: categoryRecord ? () => callbacks.renameCategory(categoryRecord) : null,
       onDelete: categoryRecord ? () => callbacks.deleteCategory(categoryRecord) : null,
       onError: callbacks.showToast,
@@ -180,6 +188,7 @@ function createCategoryTreeRow({
   collapsed = false,
   onClick,
   onToggle,
+  showActions = true,
   onRename,
   onDelete,
   onError,
@@ -204,7 +213,7 @@ function createCategoryTreeRow({
   }
   row.appendChild(button);
 
-  if (onRename && onDelete) {
+  if (showActions && onRename && onDelete) {
     const actions = document.createElement("div");
     actions.className = "categoryActions";
 

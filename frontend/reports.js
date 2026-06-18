@@ -51,7 +51,7 @@ function buildExecutionReportHtml(detail) {
 
       <section class="reportSummary">
         <div class="passRateCard">
-          ${renderReportDonut(summary.pass_rate)}
+          ${renderReportDonut(summary.pass_rate, statusCounts, summary.total_cases)}
           <strong>Overall Pass Rate</strong>
           <p>${summary.passed_cases} of ${summary.total_cases} test case(s) passed.</p>
         </div>
@@ -83,24 +83,34 @@ function renderReportStatusCard(status, counts, total) {
   `;
 }
 
-function renderReportDonut(passRate) {
-  const radius = 48;
-  const circumference = 2 * Math.PI * radius;
-  const filledLength = (Math.max(0, Math.min(passRate, 100)) / 100) * circumference;
-  const emptyLength = circumference - filledLength;
+function getReportDonutStyle(counts, total) {
+  if (!total) {
+    return "--donut-segments: #dce8ec 0 100%;";
+  }
 
+  let offset = 0;
+  const segments = STATUSES
+    .filter((status) => counts[status] > 0)
+    .map((status) => {
+      const start = offset;
+      const end = offset + (counts[status] / total) * 100;
+      offset = end;
+      return `${getReportStatusColor(status)} ${start.toFixed(2)}% ${end.toFixed(2)}%`;
+    });
+
+  return `--donut-segments: ${segments.join(", ")};`;
+}
+
+function renderReportDonut(passRate, counts, total) {
   return `
-    <svg class="passRateSvg" viewBox="0 0 120 120" role="img" aria-label="Pass rate ${passRate}%">
-      <circle class="donutTrack" cx="60" cy="60" r="${radius}"></circle>
-      <circle
-        class="donutFill"
-        cx="60"
-        cy="60"
-        r="${radius}"
-        stroke-dasharray="${filledLength} ${emptyLength}"
-      ></circle>
-      <text x="60" y="64" text-anchor="middle">${passRate}%</text>
-    </svg>
+    <div
+      class="passRateDonut"
+      style="${getReportDonutStyle(counts, total)}"
+      role="img"
+      aria-label="Pass rate ${passRate}%, status distribution"
+    >
+      <span>${passRate}%</span>
+    </div>
   `;
 }
 
@@ -306,32 +316,28 @@ function getReportStyles() {
       text-align: center;
     }
 
-    .passRateSvg {
+    .passRateDonut {
+      display: grid;
+      place-items: center;
       width: 154px;
       height: 154px;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at center, #f8fbfc 0 57%, transparent 58%),
+        conic-gradient(var(--donut-segments, #dce8ec 0 100%));
     }
 
-    .donutTrack,
-    .donutFill {
-      fill: none;
-      stroke-width: 14;
-    }
-
-    .donutTrack {
-      stroke: #dce8ec;
-    }
-
-    .donutFill {
-      stroke: #22a447;
-      stroke-linecap: round;
-      transform: rotate(-90deg);
-      transform-origin: 60px 60px;
-    }
-
-    .passRateSvg text {
-      fill: #111318;
-      font-size: 28px;
+    .passRateDonut span {
+      display: inline-flex;
+      min-width: 64px;
+      align-items: center;
+      justify-content: center;
+      color: #111318;
+      font-size: 26px;
+      font-variant-numeric: tabular-nums;
       font-weight: 900;
+      line-height: 1;
+      text-align: center;
     }
 
     .statusCards {
@@ -538,18 +544,14 @@ function getReportStyles() {
         gap: 5px;
       }
 
-      .passRateSvg {
+      .passRateDonut {
         width: 82px;
         height: 82px;
       }
 
-      .donutTrack,
-      .donutFill {
-        stroke-width: 10;
-      }
-
-      .passRateSvg text {
-        font-size: 22px;
+      .passRateDonut span {
+        min-width: 44px;
+        font-size: 19px;
       }
 
       .passRateCard h2 {

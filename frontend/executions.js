@@ -45,7 +45,95 @@ function renderStatusBar(status, counts, total) {
   `;
 }
 
-function renderExecutionSummaryDashboard(summary, statusCounts) {
+function getStatusDonutStyle(counts, total) {
+  if (!total) {
+    return "--donut-segments: #dce8ec 0 100%;";
+  }
+
+  const colors = {
+    PASS: "var(--pass)",
+    FAIL: "var(--fail)",
+    BLOCKED: "var(--blocked)",
+    SKIPPED: "var(--skipped)",
+    NOT_RUN: "var(--not-run)",
+  };
+  let offset = 0;
+  const segments = STATUSES
+    .filter((status) => counts[status] > 0)
+    .map((status) => {
+      const start = offset;
+      const end = offset + (counts[status] / total) * 100;
+      offset = end;
+      return `${colors[status]} ${start.toFixed(2)}% ${end.toFixed(2)}%`;
+    });
+
+  return `--donut-segments: ${segments.join(", ")};`;
+}
+
+function getFailedCategoryRows(items) {
+  const failedItems = items.filter((item) => item.status === "FAIL");
+  const groups = groupExecutionItemsByCategory(failedItems).map((group) => ({
+    label: group.label,
+    count: group.items.length,
+    criticalCount: group.items.filter((item) => item.priority === "Critical").length,
+    highCount: group.items.filter((item) => item.priority === "High").length,
+  }));
+
+  return {
+    failedTotal: failedItems.length,
+    groups: groups.sort((a, b) => b.count - a.count || a.label.localeCompare(b.label)),
+  };
+}
+
+function renderFailedByCategory(items) {
+  const { failedTotal, groups } = getFailedCategoryRows(items);
+
+  if (!failedTotal) {
+    return `
+      <div class="failedCategoryPanel">
+        <strong>Failed by Category</strong>
+        <p class="muted">No failed test cases in this run.</p>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="failedCategoryPanel">
+      <div class="summaryPanelHeader">
+        <strong>Failed by Category</strong>
+        <span>${failedTotal} failed</span>
+      </div>
+      <div class="failedCategoryList">
+        ${groups
+          .map((group, index) => {
+            const percentage = Math.round((group.count / failedTotal) * 100);
+            const riskText = [
+              group.criticalCount ? `${group.criticalCount} critical` : "",
+              group.highCount ? `${group.highCount} high` : "",
+            ]
+              .filter(Boolean)
+              .join(" / ");
+
+            return `
+              <div class="failedCategoryRow">
+                <div class="failedCategoryMeta">
+                  <strong>${escapeHtml(group.label)}</strong>
+                  <span>${group.count} fail(s) / ${percentage}%${index === 0 ? " / top category" : ""}</span>
+                </div>
+                <div class="failedCategoryTrack" aria-label="${escapeHtml(group.label)} ${percentage}% of failures">
+                  <div class="failedCategoryFill" style="width: ${percentage}%;"></div>
+                </div>
+                ${riskText ? `<small>${escapeHtml(riskText)}</small>` : ""}
+              </div>
+            `;
+          })
+          .join("")}
+      </div>
+    </div>
+  `;
+}
+
+function renderExecutionSummaryDashboard(summary, statusCounts, items) {
   return `
     <div class="summaryStats">
       <div class="summaryBox">Total<strong>${summary.total_cases}</strong></div>
@@ -57,8 +145,8 @@ function renderExecutionSummaryDashboard(summary, statusCounts) {
       <div class="passRatePanel">
         <div
           class="passRateDonut"
-          style="--pass-rate: ${summary.pass_rate}%;"
-          aria-label="Pass rate ${summary.pass_rate}%"
+          style="${getStatusDonutStyle(statusCounts, summary.total_cases)}"
+          aria-label="Pass rate ${summary.pass_rate}%, status distribution"
         >
           <span>${summary.pass_rate}%</span>
         </div>
@@ -72,11 +160,12 @@ function renderExecutionSummaryDashboard(summary, statusCounts) {
         ${STATUSES.map((status) => renderStatusBar(status, statusCounts, summary.total_cases)).join("")}
       </div>
     </div>
+    ${renderFailedByCategory(items)}
   `;
 }
 
 export function renderExecutionSummaryDetail(elements, detail, statusCounts) {
-  const { execution, summary } = detail;
+  const { execution, items, summary } = detail;
   elements.selectedExecutionItemTitle.textContent = "Run Summary";
   if (elements.selectedExecutionItemMeta) {
     elements.selectedExecutionItemMeta.innerHTML = `
@@ -87,7 +176,8 @@ export function renderExecutionSummaryDetail(elements, detail, statusCounts) {
   }
   elements.selectedExecutionItemBody.innerHTML = renderExecutionSummaryDashboard(
     summary,
-    statusCounts
+    statusCounts,
+    items
   );
   elements.selectedExecutionItemForm.hidden = true;
 }

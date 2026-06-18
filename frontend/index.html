@@ -18,28 +18,29 @@
             </div>
           </div>
           <nav class="topnav">
-            <a class="navItem active" href="index.html">
-              <span class="navIcon">TC</span>
-              <span>Test Cases</span>
-            </a>
+            <div class="navGroup active">
+              <a class="navItem active" href="index.html">
+            <span class="navIcon"><img src="assets/icon-test-case.svg" alt="" /></span>
+                <span>Test Cases</span>
+              </a>
+              <section class="panel caseNavigatorPane">
+                <div class="sectionHeader">
+                  <h2>Test Cases</h2>
+                  <span id="caseCount" class="muted"></span>
+                </div>
+                <div id="categoryTree" class="categoryTree"></div>
+              </section>
+            </div>
             <a class="navItem" href="suites.html">
-              <span class="navIcon">TS</span>
+            <span class="navIcon"><img src="assets/icon-test-suite.svg" alt="" /></span>
               <span>Test Suites</span>
             </a>
             <a class="navItem" href="executions.html">
-              <span class="navIcon">ER</span>
+            <span class="navIcon"><img src="assets/icon-test-execution.svg" alt="" /></span>
               <span>Test Runs & Results</span>
             </a>
           </nav>
         </header>
-
-        <section class="panel caseNavigatorPane">
-          <div class="sectionHeader">
-            <h2>Test Cases</h2>
-            <span id="caseCount" class="muted"></span>
-          </div>
-          <div id="categoryTree" class="categoryTree"></div>
-        </section>
       </aside>
 
       <main class="appMain caseWorkspace caseManagementWorkspace">

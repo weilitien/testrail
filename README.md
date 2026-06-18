@@ -47,10 +47,10 @@ Test cases include:
 - Create reusable test suites
 - Edit test suite name and description
 - Add or remove test cases from a suite with searchable, category-grouped checkboxes
-- Review selected suite cases grouped by category before saving
-- Remove selected suite cases directly from the suite edit panel
-- Browse suites from a left-side suite list
-- View suite contents grouped by category
+- Review suite contents in the left-side suite tree before saving
+- Add or remove suite cases directly from the checkbox picker
+- Browse suites from the left-side suite tree
+- View selected suite contents in the left-side tree, grouped by category
 - Delete test suites without deleting the original test cases
 
 ### Executions
@@ -62,7 +62,9 @@ Test cases include:
 - Delete executions
 - Add more test cases into an existing execution with search, category filter, and grouped checkboxes
 - Browse executions from a left-side execution list
-- View execution pass rate and status chart
+- View execution pass rate, multi-status donut chart, and status breakdown
+- Analyze failed execution results by category in Run Summary
+- Export execution reports with the same multi-status summary donut
 - Filter execution results by search, status, and priority
 - Review execution results grouped by category with expandable sections
 - Bulk update execution results selected from the left-side execution tree
@@ -74,7 +76,7 @@ Test cases include:
 
 The frontend does not display internal database IDs for executions or test cases. It shows user-facing names and Test IDs instead.
 
-The UI uses one unified left sidebar with tree-style workspace navigation and the current page's list or tree. The right side stays focused on the selected item's detail, editor, and related actions.
+The UI uses one unified left sidebar with icon-supported tree-style workspace navigation and the current page's list or tree. The right side stays focused on the selected item's detail, editor, and related actions.
 
 ### Test Case Versioning
 
@@ -94,7 +96,7 @@ http://localhost:5173/index.html
 
 Layout:
 
-- Left sidebar: workspace navigation and searchable test case tree grouped by category
+- Left sidebar: workspace navigation and searchable test case tree grouped by category, with a clear selected-case highlight
 - Main panel: category manager, search filters, create/edit test case tools, selected test case detail, and CSV import
 
 ### Executions Page
@@ -108,8 +110,9 @@ http://localhost:5173/executions.html
 Layout:
 
 - Left sidebar: workspace navigation and execution tree. The selected execution expands to show its test cases and result statuses
-- Main panel: selected execution detail with collapsible add/bulk tools and a focused selected result editor
-- Bottom of the main panel: history and run summary
+- Main panel: execution search, create execution action, selected execution detail, run summary shortcut, report export, add/bulk tools, and focused selected result editor
+- The first execution is selected automatically when the page opens
+- Bottom of the main panel: history
 - Create execution opens in the main panel with selectable test cases
 - Selected result detail shows the frozen test case version used for that run
 
@@ -123,10 +126,10 @@ http://localhost:5173/suites.html
 
 Layout:
 
-- Left sidebar: workspace navigation and searchable test suite list
-- Main panel: selected suite detail and create/edit form
+- Left sidebar: workspace navigation and test suite tree. The selected suite expands to show its test cases grouped by category
+- Main panel: suite search, create/edit form, and add/remove test case controls
 - Test case picker: searchable and grouped by category
-- Selected suite cases: grouped by category with quick remove buttons
+- Selected suite cases: checked items in the picker; uncheck to remove before saving
 
 ## Project Structure
 
@@ -166,6 +169,9 @@ frontend/
   netlify.toml
   assets/
     app-icon.jpg
+    icon-test-case.svg
+    icon-test-execution.svg
+    icon-test-suite.svg
 docker-compose.yml
 .env.example
 ```

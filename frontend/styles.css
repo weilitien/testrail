@@ -168,29 +168,35 @@ body {
 
 .navItem {
   display: grid;
-  grid-template-columns: 24px minmax(0, 1fr);
-  gap: 10px;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 12px;
   align-items: center;
 }
 
 .navIcon {
   display: inline-flex;
-  width: 22px;
-  height: 22px;
+  width: 34px;
+  height: 34px;
   align-items: center;
   justify-content: center;
-  border: 1px solid #cbd8e0;
-  border-radius: 5px;
-  color: #6c7782;
-  font-size: 9px;
-  font-weight: 900;
+  border: 1px solid #d3e0e6;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 3px;
   line-height: 1;
+}
+
+.navIcon img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .topnav a.active .navIcon,
 .navGroup.active .navIcon {
   border-color: #1f70d1;
-  color: #1f70d1;
+  box-shadow: 0 0 0 2px rgb(31 112 209 / 12%);
 }
 
 .navGroup {
@@ -204,26 +210,8 @@ body {
   background: #f4f7ff;
 }
 
-.navSubtree {
-  display: grid;
-  gap: 2px;
-  margin-left: 22px;
-  border-left: 1px solid #d8e2ea;
-  padding: 4px 0 4px 17px;
-}
-
-.navSubtree span {
-  border-radius: 7px;
-  padding: 7px 10px;
-  color: var(--muted);
-  font-size: 13px;
-  font-weight: 700;
-  line-height: 1.2;
-}
-
-.navSubtree span.active {
-  background: #dfeeff;
-  color: #1f70d1;
+.navGroup.collapsed > .panel {
+  display: none;
 }
 
 h1,
@@ -266,14 +254,14 @@ h2 {
 
 .executionPageWorkspace {
   display: grid;
-  grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 18px;
   align-items: start;
   padding: 24px clamp(16px, 4vw, 48px);
 }
 
 .executionManagementWorkspace {
-  grid-template-columns: minmax(320px, 360px) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .suiteWorkspace {
@@ -389,14 +377,33 @@ h2 {
 .appSidebar .suiteNavItem.selected,
 .appSidebar .executionNavItem:hover,
 .appSidebar .executionNavItem.selected,
-.appSidebar .caseTreeItem:hover,
-.appSidebar .caseTreeItem.selected {
+.appSidebar .caseTreeItem:hover {
   border-color: transparent;
   background: #eef6ff;
 }
 
+.appSidebar .caseTreeItem.selected {
+  border-color: #1f70d1;
+  background: #dcecff;
+  box-shadow:
+    inset 4px 0 0 #1f70d1,
+    0 8px 18px rgb(31 112 209 / 12%);
+}
+
+.appSidebar .caseTreeItem.selected .caseId,
+.appSidebar .caseTreeItem.selected strong {
+  color: #174f95;
+}
+
 .appSidebar .suiteNavItem {
-  padding: 8px 9px;
+  grid-template-columns: auto minmax(0, auto) minmax(0, 1fr) auto;
+  gap: 7px;
+  align-items: center;
+  padding: 7px 9px;
+}
+
+.appSidebar .suiteNavItem .navTypeLabel {
+  grid-column: auto;
 }
 
 .appSidebar .suiteNavItem strong {
@@ -407,12 +414,83 @@ h2 {
   font-size: 12px;
 }
 
+.appSidebar .suiteTreeGroup {
+  display: grid;
+  gap: 2px;
+}
+
+.appSidebar .suiteTreeItems {
+  display: grid;
+  gap: 5px;
+  border-left: 1px solid #d8e2ea;
+  margin-left: 10px;
+  padding: 4px 0 4px 12px;
+}
+
+.appSidebar .suiteTreeCaseGroup,
+.appSidebar .suiteTreeCaseItems {
+  display: grid;
+  gap: 2px;
+}
+
+.appSidebar .suiteTreeCaseHeader {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px;
+  align-items: center;
+  padding: 5px 7px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.appSidebar .suiteTreeCaseHeader strong {
+  min-width: 22px;
+  border-radius: 999px;
+  padding: 2px 7px;
+  background: #ffffff;
+  text-align: center;
+  font-size: 11px;
+}
+
+.appSidebar .suiteTreeCaseItem {
+  display: grid;
+  grid-template-columns: minmax(78px, 0.85fr) minmax(0, 1.15fr);
+  gap: 7px;
+  align-items: center;
+  border-radius: 7px;
+  padding: 5px 7px;
+}
+
+.appSidebar .suiteTreeCaseItem:hover {
+  background: #eef6ff;
+}
+
+.appSidebar .suiteTreeCaseItem .caseId {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.appSidebar .suiteTreeCaseItem strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+  line-height: 1.2;
+}
+
 .appSidebar .executionNavItem {
   padding: 6px 7px;
 }
 
+.appSidebar .executionNavItem:not(.selected) .executionNavActions {
+  display: none;
+}
+
 .appSidebar .executionNavButton strong {
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .appSidebar .executionNavActions button {
@@ -424,6 +502,142 @@ h2 {
   margin-top: 2px;
   padding-top: 6px;
   padding-left: 18px;
+}
+
+.appSidebar .categoryTree {
+  gap: 4px;
+}
+
+.appSidebar .categoryRow {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 3px;
+}
+
+.appSidebar .treeItem {
+  padding: 7px 9px;
+}
+
+.appSidebar .treeItem.hasToggle span:not(.categoryToggle) {
+  background: transparent;
+  padding: 0;
+}
+
+.appSidebar .treeItem strong {
+  min-width: 22px;
+  background: #ffffff;
+  font-size: 11px;
+}
+
+.appSidebar .categoryRow.active .treeItem,
+.appSidebar .treeItem:hover {
+  border-color: transparent;
+  background: #eef6ff;
+  color: #1f70d1;
+}
+
+.appSidebar .categoryActions {
+  justify-content: flex-start;
+  margin-left: 28px;
+  gap: 8px;
+}
+
+.appSidebar .categoryActions .iconButton {
+  min-height: 0;
+  border: 0;
+  padding: 2px 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 11px;
+  box-shadow: none;
+}
+
+.appSidebar .categoryActions .iconButton:hover {
+  background: transparent;
+  color: #1f70d1;
+}
+
+.appSidebar .categoryActions .dangerText:hover {
+  color: #a12b16;
+}
+
+.appSidebar .caseTreeItems {
+  gap: 2px;
+  border-left: 1px solid #d8e2ea;
+  margin-left: 10px;
+  padding-left: 12px;
+}
+
+.appSidebar .caseTreeItem {
+  grid-template-columns: minmax(88px, 0.85fr) minmax(0, 1.15fr);
+  gap: 7px;
+  padding: 6px 8px;
+}
+
+.appSidebar .caseTreeItem .priority {
+  display: none;
+}
+
+.appSidebar .caseTreeItem .caseId {
+  font-size: 11px;
+}
+
+.appSidebar .caseTreeItem strong {
+  font-size: 12px;
+}
+
+.appSidebar .navGroup > .panel {
+  margin: 0 0 2px 22px;
+  border: 0;
+  border-left: 1px solid #d8e2ea;
+  border-radius: 0;
+  padding: 4px 0 4px 16px;
+  background: transparent;
+  box-shadow: none;
+}
+
+.appSidebar .navGroup > .caseNavigatorPane,
+.appSidebar .navGroup > .executionNavigatorPane,
+.appSidebar .navGroup > .suiteNavigatorPane {
+  position: static;
+  max-height: none;
+  overflow: visible;
+}
+
+.appSidebar .navGroup > .panel > .sectionHeader {
+  min-height: 0;
+  margin-bottom: 6px;
+  padding: 0 0 0 2px;
+}
+
+.appSidebar .navGroup > .panel > .sectionHeader h2 {
+  display: none;
+}
+
+.appSidebar .navGroup > .panel > .sectionHeader .muted {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.appSidebar .navGroup > .executionNavigatorPane > .sectionHeader {
+  align-items: stretch;
+}
+
+.appSidebar .navGroup > .executionNavigatorPane .headerActions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+  width: 100%;
+}
+
+.appSidebar .navGroup > .executionNavigatorPane .headerActions .muted {
+  justify-self: end;
+}
+
+.appSidebar .navGroup > .executionNavigatorPane .headerActions button {
+  width: 100%;
+  padding: 7px 9px;
+  font-size: 12px;
 }
 
 .appMain .caseDetailPane,
@@ -440,7 +654,25 @@ h2 {
   gap: 14px;
 }
 
+.suiteToolsPane {
+  display: grid;
+  gap: 14px;
+}
+
+.executionToolsPane {
+  display: grid;
+  gap: 14px;
+}
+
 .caseToolsPane .sectionHeader p {
+  margin-bottom: 0;
+}
+
+.suiteToolsPane .sectionHeader p {
+  margin-bottom: 0;
+}
+
+.executionToolsPane .sectionHeader p {
   margin-bottom: 0;
 }
 
@@ -887,6 +1119,10 @@ button.dangerText:hover {
 .caseTreeItem:hover,
 .caseTreeItem.selected {
   border-color: var(--accent);
+  background: #e5f1ff;
+}
+
+.caseTreeItem:hover:not(.selected) {
   background: #fff9f5;
 }
 
@@ -1062,22 +1298,22 @@ button.dangerText:hover {
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 6px;
   align-items: stretch;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 9px;
-  background: #ffffff;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  padding: 6px;
+  background: transparent;
 }
 
 .executionNavItem:hover,
 .executionNavItem.selected {
-  border-color: var(--accent);
-  background: #fff9f5;
+  border-color: transparent;
+  background: #eef6ff;
 }
 
 .executionNavButton {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 5px 9px;
+  grid-template-columns: auto minmax(0, auto) minmax(0, 1fr);
+  gap: 5px 7px;
   min-width: 0;
   padding: 4px 2px;
   border-radius: 6px;
@@ -1089,7 +1325,7 @@ button.dangerText:hover {
 
 .executionNavButton strong,
 .executionNavButton .navTypeLabel {
-  grid-column: 2;
+  grid-column: auto;
 }
 
 .navTypeLabel {
@@ -1118,14 +1354,7 @@ button.dangerText:hover {
 }
 
 .suiteNavList,
-.suiteCaseList,
-.suiteCaseGroup,
-.suiteCaseItems,
-.suiteCasePicker,
-.selectedSuiteCases,
-.selectedSuiteCaseList,
-.selectedSuiteCaseGroup,
-.selectedSuiteCaseItems {
+.suiteCasePicker {
   display: grid;
   gap: 10px;
 }
@@ -1137,92 +1366,8 @@ button.dangerText:hover {
   background: #eef7fa;
 }
 
-.selectedSuiteCases {
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 10px;
-  background: #ffffff;
-}
-
-.formSectionHeader.compact {
-  gap: 8px;
-}
-
-.formSectionHeader.compact h4 {
-  margin: 0;
-  font-size: 15px;
-}
-
-.formSectionHeader.compact span {
-  font-size: 12px;
-}
-
-.selectedSuiteCaseList {
-  max-height: 280px;
-  overflow: auto;
-}
-
-.selectedSuiteCaseHeader {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.selectedSuiteCaseHeader strong {
-  width: fit-content;
-  border-radius: 999px;
-  padding: 5px 12px;
-  background: #e8f5f8;
-  color: #25313a;
-  font-size: 15px;
-}
-
-.selectedSuiteCaseHeader span {
-  border-radius: 999px;
-  padding: 3px 9px;
-  background: #f3f8fa;
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 900;
-}
-
-.selectedSuiteCaseRow {
-  display: grid;
-  grid-template-columns: 180px minmax(0, 1fr) auto auto;
-  gap: 8px;
-  align-items: center;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 8px;
-  background: var(--panel-soft);
-}
-
-.selectedSuiteCaseRow .caseId,
-.selectedSuiteCaseRow strong {
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-
-.selectedSuiteCaseRow .caseId {
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 900;
-}
-
-.selectedSuiteCaseRow strong {
-  font-size: 13px;
-  justify-self: start;
-  line-height: 1.2;
-}
-
-.selectedSuiteCaseRow .iconButton {
-  padding: 6px 10px;
-  font-size: 12px;
-}
-
 .suiteCasePicker .checklist {
-  max-height: 320px;
+  max-height: min(62vh, 720px);
 }
 
 .suitePickerPanel {
@@ -1278,43 +1423,9 @@ button.dangerText:hover {
   margin-top: 18px;
 }
 
-.suiteCaseList {
-  margin-bottom: 18px;
-  padding-bottom: 18px;
-  border-bottom: 1px solid var(--line);
-}
-
-.suiteCaseRow {
-  display: grid;
-  grid-template-columns: 180px minmax(0, 1fr) auto;
-  gap: 10px;
-  align-items: center;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 9px 10px;
-  background: var(--panel-soft);
-}
-
-.suiteCaseRow .caseId,
-.suiteCaseRow strong {
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-
-.suiteCaseRow .caseId {
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 800;
-}
-
-.suiteCaseRow strong {
-  font-size: 13px;
-  justify-self: start;
-}
-
 .executionNavButton strong {
   color: #111318;
-  font-size: 18px;
+  font-size: 13px;
   font-weight: 900;
   line-height: 1.15;
 }
@@ -1342,11 +1453,10 @@ button.dangerText:hover {
 .executionNavTree {
   grid-column: 1 / -1;
   display: grid;
-  gap: 8px;
-  border-top: 1px solid var(--line);
-  margin-top: 4px;
-  padding-top: 10px;
-  padding-left: 10px;
+  gap: 6px;
+  border-left: 1px solid #d8e2ea;
+  margin: 2px 0 0 10px;
+  padding: 4px 0 4px 12px;
 }
 
 .executionNavTree .muted {
@@ -1356,18 +1466,18 @@ button.dangerText:hover {
 
 .executionNavGroup {
   display: grid;
-  gap: 6px;
+  gap: 3px;
 }
 
 .executionNavGroupHeader {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+  gap: 6px;
+  padding: 5px 7px;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
-  text-transform: uppercase;
 }
 
 .executionNavGroupHeader strong {
@@ -1384,19 +1494,19 @@ button.dangerText:hover {
 
 .executionNavGroupItems {
   display: grid;
-  gap: 6px;
+  gap: 2px;
 }
 
 .executionNavResultItem {
   display: grid;
-  grid-template-columns: 18px minmax(0, 1fr) auto;
+  grid-template-columns: 16px minmax(70px, 0.8fr) auto;
   gap: 6px 8px;
   align-items: center;
   width: 100%;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 7px 8px;
-  background: #f8fbfc;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  padding: 5px 7px;
+  background: transparent;
   color: var(--text);
   text-align: left;
   box-shadow: none;
@@ -1411,8 +1521,8 @@ button.dangerText:hover {
 
 .executionNavResultItem:hover,
 .executionNavResultItem.selected {
-  border-color: var(--accent);
-  background: #fff9f5;
+  border-color: transparent;
+  background: #eef6ff;
 }
 
 .executionNavResultItem .caseId {
@@ -1428,7 +1538,7 @@ button.dangerText:hover {
   grid-column: 2 / -1;
   min-width: 0;
   color: #2f3942;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   line-height: 1.25;
   overflow-wrap: anywhere;
@@ -1463,10 +1573,6 @@ button.dangerText:hover {
   font-size: 16px;
 }
 
-.runSummaryPane {
-  grid-column: 1 / -1;
-}
-
 .historyPane {
   grid-column: 1 / -1;
 }
@@ -1480,30 +1586,31 @@ button.dangerText:hover {
 }
 
 .summaryShortcut {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  width: 100%;
-  border: 0;
-  padding: 0;
-  background: transparent;
+  justify-content: center;
+  gap: 8px;
+  width: auto;
   color: var(--text);
-  text-align: left;
 }
 
 .summaryShortcut span {
-  font-size: 16px;
+  font-size: inherit;
   font-weight: 800;
 }
 
 .summaryShortcut small {
-  text-align: right;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
 }
 
 .summaryShortcut:hover,
 .summaryShortcut.active {
-  color: var(--accent);
+  border-color: #1f70d1;
+  background: #eef6ff;
+  color: #1f70d1;
 }
 
 .historyPane .history {
@@ -1845,7 +1952,8 @@ button.dangerText:hover {
 }
 
 .passRatePanel,
-.statusChart {
+.statusChart,
+.failedCategoryPanel {
   border: 1px solid var(--line);
   border-radius: 8px;
   padding: 16px;
@@ -1860,7 +1968,9 @@ button.dangerText:hover {
 }
 
 .passRatePanel strong,
-.statusChart > strong {
+.statusChart > strong,
+.failedCategoryPanel > strong,
+.summaryPanelHeader strong {
   display: block;
   margin-bottom: 8px;
   font-size: 15px;
@@ -1880,17 +1990,98 @@ button.dangerText:hover {
   border-radius: 50%;
   background:
     radial-gradient(circle at center, var(--panel-soft) 0 57%, transparent 58%),
-    conic-gradient(var(--pass) var(--pass-rate), #dce8ec 0);
+    conic-gradient(var(--donut-segments, #dce8ec 0 100%));
 }
 
 .passRateDonut span {
-  font-size: 24px;
-  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 56px;
+  font-size: 22px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  line-height: 1;
+  text-align: center;
 }
 
 .statusChart {
   display: grid;
   gap: 12px;
+}
+
+.failedCategoryPanel {
+  display: grid;
+  gap: 12px;
+}
+
+.failedCategoryPanel .muted {
+  margin-bottom: 0;
+}
+
+.summaryPanelHeader {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.summaryPanelHeader strong {
+  margin-bottom: 0;
+}
+
+.summaryPanelHeader span {
+  border-radius: 999px;
+  padding: 4px 9px;
+  background: #fde7e9;
+  color: #a2191f;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.failedCategoryList {
+  display: grid;
+  gap: 10px;
+}
+
+.failedCategoryRow {
+  display: grid;
+  gap: 6px;
+}
+
+.failedCategoryMeta {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.failedCategoryMeta strong {
+  min-width: 0;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.failedCategoryRow small {
+  color: #a2191f;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.failedCategoryTrack {
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #f6d6d9;
+}
+
+.failedCategoryFill {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--fail);
 }
 
 .statusBarRow {
@@ -2079,7 +2270,6 @@ button.dangerText:hover {
   .suiteDetailPane,
   .executionDetailPane,
   .executionCreatorPane,
-  .runSummaryPane,
   .resultDetailPane,
   .historyPane {
     position: static;
@@ -2097,15 +2287,6 @@ button.dangerText:hover {
 
   .caseTreeItem .priority {
     grid-column: auto;
-  }
-
-  .selectedSuiteCaseRow {
-    grid-template-columns: 1fr;
-  }
-
-  .selectedSuiteCaseRow .priority,
-  .selectedSuiteCaseRow .iconButton {
-    width: fit-content;
   }
 
   .stepsTableHeader {
@@ -2162,8 +2343,7 @@ button.dangerText:hover {
   }
 
   .executionNavItem,
-  .executionWorkspace,
-  .suiteCaseRow {
+  .executionWorkspace {
     grid-template-columns: 1fr;
   }
 

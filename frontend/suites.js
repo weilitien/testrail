@@ -8,6 +8,7 @@ import { escapeHtml } from "./utils.js";
 let testSuites = [];
 let selectedSuiteCaseIds = new Set();
 let selectedSuiteId = null;
+let selectedSuiteTreeCollapsed = false;
 
 export async function refreshTestSuites() {
   testSuites = await api("/test-suites");
@@ -50,20 +51,69 @@ export function renderTestSuites(elements, showToast, testCases) {
       : "<p class='muted treeEmptyState'>No test suites yet.</p>";
 
   for (const suite of visibleSuites) {
+    const isSelected = selectedSuiteId === suite.id;
+    const selectedSuiteCases = testCases.filter((testCase) =>
+      selectedSuiteCaseIds.has(testCase.id)
+    );
+    const canRenderCases = isSelected && !selectedSuiteTreeCollapsed;
+    const wrapper = document.createElement("section");
+    wrapper.className = `suiteTreeGroup ${isSelected ? "selected" : ""}`;
+
     const button = document.createElement("button");
-    button.className = `suiteNavItem ${selectedSuiteId === suite.id ? "selected" : ""}`;
+    button.className = `suiteNavItem ${isSelected ? "selected" : ""}`;
     button.type = "button";
     button.innerHTML = `
+      <span class="categoryToggle">${isSelected && !selectedSuiteTreeCollapsed ? "-" : "+"}</span>
       <span class="navTypeLabel suite">Test Suite</span>
       <strong>${escapeHtml(suite.name)}</strong>
       <small>${suite.total_cases || 0} case(s)</small>
     `;
     button.addEventListener("click", () => {
+      if (isSelected) {
+        selectedSuiteTreeCollapsed = !selectedSuiteTreeCollapsed;
+        renderTestSuites(elements, showToast, testCases);
+        return;
+      }
       selectTestSuite(suite.id, elements, showToast, testCases).catch((error) =>
         showToast(error.message)
       );
     });
-    elements.suiteList.appendChild(button);
+    wrapper.appendChild(button);
+
+    if (canRenderCases) {
+      const caseList = document.createElement("div");
+      caseList.className = "suiteTreeItems";
+      caseList.innerHTML = selectedSuiteCases.length
+        ? ""
+        : "<p class='muted treeEmptyState'>No test cases in this suite.</p>";
+
+      for (const group of groupTestCasesByCategory(selectedSuiteCases)) {
+        const groupElement = document.createElement("section");
+        groupElement.className = "suiteTreeCaseGroup";
+        groupElement.innerHTML = `
+          <div class="suiteTreeCaseHeader">
+            <span>${escapeHtml(group.label)}</span>
+            <strong>${group.items.length}</strong>
+          </div>
+          <div class="suiteTreeCaseItems"></div>
+        `;
+
+        const groupItems = groupElement.querySelector(".suiteTreeCaseItems");
+        for (const testCase of group.items) {
+          const row = document.createElement("article");
+          row.className = "suiteTreeCaseItem";
+          row.innerHTML = `
+            <span class="caseId">${escapeHtml(testCase.test_id || "No Test ID")}</span>
+            <strong>${escapeHtml(testCase.title)}</strong>
+          `;
+          groupItems.appendChild(row);
+        }
+        caseList.appendChild(groupElement);
+      }
+      wrapper.appendChild(caseList);
+    }
+
+    elements.suiteList.appendChild(wrapper);
   }
 }
 
@@ -104,10 +154,9 @@ export function renderSuiteCaseChecklist(elements, testCases) {
     selectedIds: selectedSuiteCaseIds,
     countElement: elements.selectedSuiteCaseCount,
     onSelectionChange: () => {
-      renderSelectedSuiteCaseList(elements, testCases);
+      renderTestSuites(elements, () => {}, testCases);
     },
   });
-  renderSelectedSuiteCaseList(elements, testCases);
 }
 
 export async function saveTestSuite(elements, showToast) {
@@ -132,6 +181,7 @@ export async function saveTestSuite(elements, showToast) {
 
 export function clearSuiteSelection(elements, testCases, showToast = () => {}) {
   selectedSuiteId = null;
+  selectedSuiteTreeCollapsed = false;
   selectedSuiteCaseIds = new Set();
   if (elements.suiteForm) {
     elements.suiteForm.reset();
@@ -146,7 +196,7 @@ export async function deleteSelectedSuite(elements, showToast, testCases) {
     return false;
   }
 
-  const suiteName = elements.selectedSuiteTitle.textContent;
+  const suiteName = elements.suiteName?.value.trim() || "selected suite";
   const confirmed = window.confirm(`Delete test suite "${suiteName}"?`);
   if (!confirmed) {
     return false;
@@ -171,19 +221,19 @@ function filterTestSuites(elements, suites) {
 
 async function selectTestSuite(suiteId, elements, showToast, testCases) {
   selectedSuiteId = suiteId;
+  selectedSuiteTreeCollapsed = false;
   const detail = await api(`/test-suites/${suiteId}`);
-  renderTestSuites(elements, showToast, testCases);
   renderSuiteDetail(elements, testCases, detail);
+  renderTestSuites(elements, showToast, testCases);
 }
 
 function renderSuiteDetail(elements, testCases, detail = null) {
-  if (!elements.suiteDetailEmpty || !elements.suiteDetailContent) {
+  if (!elements.suiteDetailEmpty) {
     return;
   }
 
   if (!detail) {
     elements.suiteDetailEmpty.hidden = false;
-    elements.suiteDetailContent.hidden = true;
     elements.deleteSuiteButton.hidden = true;
     elements.suiteFormTitle.textContent = "Create Test Suite";
     elements.suiteSubmitButton.textContent = "Create Suite";
@@ -194,99 +244,11 @@ function renderSuiteDetail(elements, testCases, detail = null) {
 
   const { suite, test_cases: suiteCases } = detail;
   elements.suiteDetailEmpty.hidden = true;
-  elements.suiteDetailContent.hidden = false;
   elements.deleteSuiteButton.hidden = false;
-  elements.selectedSuiteTitle.textContent = suite.name;
-  elements.selectedSuiteMeta.textContent = `${suiteCases.length} case(s)`;
   elements.suiteFormTitle.textContent = "Edit Test Suite";
   elements.suiteSubmitButton.textContent = "Save Suite";
   elements.suiteName.value = suite.name;
   elements.suiteDescription.value = suite.description || "";
   selectedSuiteCaseIds = new Set(suiteCases.map((testCase) => testCase.id));
   renderSuiteCaseChecklist(elements, testCases);
-  renderSuiteCaseList(elements, suiteCases);
-}
-
-function renderSuiteCaseList(elements, suiteCases) {
-  if (!elements.suiteCaseList) {
-    return;
-  }
-
-  elements.suiteCaseList.innerHTML = suiteCases.length
-    ? ""
-    : "<p class='muted'>No test cases in this suite yet.</p>";
-
-  for (const group of groupTestCasesByCategory(suiteCases)) {
-    const groupElement = document.createElement("section");
-    groupElement.className = "suiteCaseGroup";
-    groupElement.innerHTML = `
-      <div class="executionNavGroupHeader">
-        <strong>${escapeHtml(group.label)}</strong>
-        <span>${group.items.length}</span>
-      </div>
-      <div class="suiteCaseItems"></div>
-    `;
-
-    const caseItems = groupElement.querySelector(".suiteCaseItems");
-    for (const testCase of group.items) {
-      const row = document.createElement("article");
-      row.className = "suiteCaseRow";
-      row.innerHTML = `
-        <span class="caseId">${escapeHtml(testCase.test_id || "No Test ID")}</span>
-        <strong>${escapeHtml(testCase.title)}</strong>
-        <span class="priority ${escapeHtml(testCase.priority || "Medium")}">
-          ${escapeHtml(testCase.priority || "Medium")}
-        </span>
-      `;
-      caseItems.appendChild(row);
-    }
-
-    elements.suiteCaseList.appendChild(groupElement);
-  }
-}
-
-function renderSelectedSuiteCaseList(elements, testCases) {
-  if (!elements.selectedSuiteCaseList) {
-    return;
-  }
-
-  const selectedCases = testCases.filter((testCase) =>
-    selectedSuiteCaseIds.has(testCase.id)
-  );
-  elements.selectedSuiteCaseList.innerHTML = selectedCases.length
-    ? ""
-    : "<p class='muted'>No test cases selected yet.</p>";
-
-  for (const group of groupTestCasesByCategory(selectedCases)) {
-    const groupElement = document.createElement("section");
-    groupElement.className = "selectedSuiteCaseGroup";
-    groupElement.innerHTML = `
-      <div class="selectedSuiteCaseHeader">
-        <strong>${escapeHtml(group.label)}</strong>
-        <span>${group.items.length}</span>
-      </div>
-      <div class="selectedSuiteCaseItems"></div>
-    `;
-
-    const groupItems = groupElement.querySelector(".selectedSuiteCaseItems");
-    for (const testCase of group.items) {
-      const row = document.createElement("article");
-      row.className = "selectedSuiteCaseRow";
-      row.innerHTML = `
-        <span class="caseId">${escapeHtml(testCase.test_id || "No Test ID")}</span>
-        <strong>${escapeHtml(testCase.title)}</strong>
-        <span class="priority ${escapeHtml(testCase.priority || "Medium")}">
-          ${escapeHtml(testCase.priority || "Medium")}
-        </span>
-        <button class="iconButton dangerText" type="button">Remove</button>
-      `;
-      row.querySelector("button").addEventListener("click", () => {
-        selectedSuiteCaseIds.delete(testCase.id);
-        renderSuiteCaseChecklist(elements, testCases);
-      });
-      groupItems.appendChild(row);
-    }
-
-    elements.selectedSuiteCaseList.appendChild(groupElement);
-  }
 }

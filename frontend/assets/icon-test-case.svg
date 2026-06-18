@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 170 130" width="170" height="130">
+  <!-- screw corners -->
+  <rect x="8" y="8" width="8" height="8" rx="1" fill="#4a7fd4" opacity="0.5"/>
+  <line x1="10" y1="12" x2="14" y2="12" stroke="#1a3f80" stroke-width="1.5"/>
+  <line x1="12" y1="10" x2="12" y2="14" stroke="#1a3f80" stroke-width="1.5"/>
+  <rect x="154" y="8" width="8" height="8" rx="1" fill="#4a7fd4" opacity="0.5"/>
+  <line x1="156" y1="12" x2="160" y2="12" stroke="#1a3f80" stroke-width="1.5"/>
+  <line x1="158" y1="10" x2="158" y2="14" stroke="#1a3f80" stroke-width="1.5"/>
+  <rect x="8" y="114" width="8" height="8" rx="1" fill="#4a7fd4" opacity="0.5"/>
+  <line x1="10" y1="118" x2="14" y2="118" stroke="#1a3f80" stroke-width="1.5"/>
+  <line x1="12" y1="116" x2="12" y2="120" stroke="#1a3f80" stroke-width="1.5"/>
+  <rect x="154" y="114" width="8" height="8" rx="1" fill="#4a7fd4" opacity="0.5"/>
+  <line x1="156" y1="118" x2="160" y2="118" stroke="#1a3f80" stroke-width="1.5"/>
+  <line x1="158" y1="116" x2="158" y2="120" stroke="#1a3f80" stroke-width="1.5"/>
+
+  <!-- clipboard body -->
+  <rect x="48" y="32" width="74" height="86" rx="2" fill="#2d5fa8"/>
+  <!-- clipboard clip -->
+  <rect x="68" y="26" width="34" height="12" rx="2" fill="#1a3f80"/>
+  <rect x="76" y="24" width="18" height="8" rx="3" fill="#4a7fd4"/>
+
+  <!-- circuit traces -->
+  <line x1="56" y1="52" x2="78" y2="52" stroke="#7aaee8" stroke-width="1.5"/>
+  <line x1="78" y1="52" x2="78" y2="58" stroke="#7aaee8" stroke-width="1.5"/>
+  <line x1="78" y1="58" x2="114" y2="58" stroke="#7aaee8" stroke-width="1.5"/>
+  <line x1="56" y1="68" x2="68" y2="68" stroke="#7aaee8" stroke-width="1.5"/>
+  <line x1="68" y1="68" x2="68" y2="74" stroke="#7aaee8" stroke-width="1.5"/>
+  <line x1="68" y1="74" x2="108" y2="74" stroke="#7aaee8" stroke-width="1.5"/>
+  <line x1="56" y1="84" x2="90" y2="84" stroke="#7aaee8" stroke-width="1.5"/>
+  <line x1="90" y1="84" x2="90" y2="90" stroke="#7aaee8" stroke-width="1.5"/>
+  <line x1="90" y1="90" x2="114" y2="90" stroke="#7aaee8" stroke-width="1.5"/>
+
+  <!-- trace nodes -->
+  <circle cx="78" cy="52" r="2.5" fill="#f0c040"/>
+  <circle cx="68" cy="68" r="2.5" fill="#f0c040"/>
+  <circle cx="90" cy="84" r="2.5" fill="#40c07a"/>
+  <circle cx="108" cy="74" r="2.5" fill="#40c07a"/>
+  <circle cx="114" cy="58" r="2.5" fill="#40c07a"/>
+
+  <!-- pass/fail pixel marks -->
+  <rect x="56" y="50" width="4" height="4" rx="0" fill="#f0c040"/>
+  <rect x="56" y="66" width="4" height="4" rx="0" fill="#f0c040"/>
+  <rect x="56" y="82" width="4" height="4" rx="0" fill="#40c07a"/>
+</svg>

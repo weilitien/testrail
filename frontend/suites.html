@@ -19,24 +19,40 @@
           </div>
           <nav class="topnav">
             <a class="navItem" href="index.html">
-              <span class="navIcon">TC</span>
+            <span class="navIcon"><img src="assets/icon-test-case.svg" alt="" /></span>
               <span>Test Cases</span>
             </a>
-            <a class="navItem active" href="suites.html">
-              <span class="navIcon">TS</span>
-              <span>Test Suites</span>
-            </a>
+            <div class="navGroup active">
+              <a class="navItem active" href="suites.html">
+            <span class="navIcon"><img src="assets/icon-test-suite.svg" alt="" /></span>
+                <span>Test Suites</span>
+              </a>
+              <section class="panel suiteNavigatorPane">
+                <div class="sectionHeader">
+                  <h2>Test Suites</h2>
+                  <span id="suiteCount" class="muted"></span>
+                </div>
+                <div id="suiteList" class="suiteNavList"></div>
+              </section>
+            </div>
             <a class="navItem" href="executions.html">
-              <span class="navIcon">ER</span>
+            <span class="navIcon"><img src="assets/icon-test-execution.svg" alt="" /></span>
               <span>Test Runs & Results</span>
             </a>
           </nav>
         </header>
+      </aside>
 
-        <section class="panel suiteNavigatorPane">
+      <main class="appMain suiteWorkspace">
+        <section class="panel suiteToolsPane">
           <div class="sectionHeader">
-            <h2>Test Suites</h2>
-            <span id="suiteCount" class="muted"></span>
+            <div>
+              <h2>Test Suite Management</h2>
+              <p class="muted">Search suites, create a new suite, and manage the selected suite.</p>
+            </div>
+            <button id="cancelSuiteEditButton" class="secondary" type="button">
+              New Suite
+            </button>
           </div>
           <div class="executionToolbar">
             <label>
@@ -47,11 +63,8 @@
               Clear
             </button>
           </div>
-          <div id="suiteList" class="suiteNavList"></div>
         </section>
-      </aside>
 
-      <main class="appMain suiteWorkspace">
         <section class="panel suiteDetailPane">
         <div id="suiteDetailEmpty" class="emptyState">
           <h2>Create a Test Suite</h2>
@@ -59,14 +72,6 @@
             Build a reusable group of test cases, such as Smoke, Regression, or
             Release Verification.
           </p>
-        </div>
-
-        <div id="suiteDetailContent" hidden>
-          <div class="sectionHeader">
-            <h2 id="selectedSuiteTitle">Test Suite Detail</h2>
-            <span id="selectedSuiteMeta" class="muted"></span>
-          </div>
-          <div id="suiteCaseList" class="suiteCaseList"></div>
         </div>
 
         <div class="caseFormPanel suiteFormPanel">
@@ -88,13 +93,6 @@
                 <h3>Test Cases</h3>
                 <span id="selectedSuiteCaseCount" class="muted">0 selected</span>
               </div>
-              <div class="selectedSuiteCases">
-                <div class="formSectionHeader compact">
-                  <h4>Selected Test Cases</h4>
-                  <span class="muted">Remove cases here without leaving edit mode.</span>
-                </div>
-                <div id="selectedSuiteCaseList" class="selectedSuiteCaseList"></div>
-              </div>
               <div class="addCaseFilters">
                 <label>
                   Search Test Cases
@@ -112,9 +110,6 @@
 
             <div class="formActions">
               <button id="suiteSubmitButton" type="submit">Create Suite</button>
-              <button id="cancelSuiteEditButton" class="secondary" type="button">
-                New Suite
-              </button>
               <button id="deleteSuiteButton" class="danger" type="button" hidden>
                 Delete Suite
               </button>

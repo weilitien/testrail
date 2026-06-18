@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 170 130" width="170" height="130">
+  <!-- screw corners -->
+  <rect x="8" y="8" width="8" height="8" rx="1" fill="#4a7fd4" opacity="0.5"/>
+  <line x1="10" y1="12" x2="14" y2="12" stroke="#1a3f80" stroke-width="1.5"/>
+  <line x1="12" y1="10" x2="12" y2="14" stroke="#1a3f80" stroke-width="1.5"/>
+  <rect x="154" y="8" width="8" height="8" rx="1" fill="#4a7fd4" opacity="0.5"/>
+  <line x1="156" y1="12" x2="160" y2="12" stroke="#1a3f80" stroke-width="1.5"/>
+  <line x1="158" y1="10" x2="158" y2="14" stroke="#1a3f80" stroke-width="1.5"/>
+  <rect x="8" y="114" width="8" height="8" rx="1" fill="#4a7fd4" opacity="0.5"/>
+  <line x1="10" y1="118" x2="14" y2="118" stroke="#1a3f80" stroke-width="1.5"/>
+  <line x1="12" y1="116" x2="12" y2="120" stroke="#1a3f80" stroke-width="1.5"/>
+  <rect x="154" y="114" width="8" height="8" rx="1" fill="#4a7fd4" opacity="0.5"/>
+  <line x1="156" y1="118" x2="160" y2="118" stroke="#1a3f80" stroke-width="1.5"/>
+  <line x1="158" y1="116" x2="158" y2="120" stroke="#1a3f80" stroke-width="1.5"/>
+
+  <!-- large gear teeth -->
+  <rect x="81" y="18" width="8" height="10" rx="1" fill="#4a7fd4"/>
+  <rect x="103" y="24" width="10" height="8" rx="1" fill="#4a7fd4" transform="rotate(45 108 28)"/>
+  <rect x="107" y="50" width="10" height="8" rx="1" fill="#4a7fd4"/>
+  <rect x="101" y="72" width="10" height="8" rx="1" fill="#4a7fd4" transform="rotate(-45 106 76)"/>
+  <rect x="81" y="80" width="8" height="10" rx="1" fill="#4a7fd4"/>
+  <rect x="54" y="72" width="10" height="8" rx="1" fill="#4a7fd4" transform="rotate(45 59 76)"/>
+  <rect x="53" y="50" width="10" height="8" rx="1" fill="#4a7fd4"/>
+  <rect x="55" y="24" width="10" height="8" rx="1" fill="#4a7fd4" transform="rotate(-45 60 28)"/>
+
+  <!-- large gear body -->
+  <circle cx="85" cy="56" r="28" fill="#2d5fa8"/>
+  <circle cx="85" cy="56" r="18" fill="#1a3f80"/>
+  <circle cx="85" cy="56" r="7" fill="#4a7fd4"/>
+  <circle cx="85" cy="56" r="3" fill="#1a3f80"/>
+
+  <!-- small gear teeth -->
+  <rect x="108" y="73" width="5" height="7" rx="1" fill="#7aaee8"/>
+  <rect x="121" y="73" width="5" height="7" rx="1" fill="#7aaee8"/>
+  <rect x="102" y="80" width="7" height="5" rx="1" fill="#7aaee8"/>
+  <rect x="102" y="93" width="7" height="5" rx="1" fill="#7aaee8"/>
+  <rect x="121" y="85" width="7" height="5" rx="1" fill="#7aaee8"/>
+
+  <!-- small gear body -->
+  <circle cx="113" cy="85" r="14" fill="#2d5fa8"/>
+  <circle cx="113" cy="85" r="8" fill="#1a3f80"/>
+  <circle cx="113" cy="85" r="3" fill="#7aaee8"/>
+
+  <!-- mesh contact point -->
+  <circle cx="99" cy="71" r="2" fill="#f0c040"/>
+</svg>

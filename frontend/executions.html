@@ -19,36 +19,38 @@
           </div>
           <nav class="topnav">
             <a class="navItem" href="index.html">
-              <span class="navIcon">TC</span>
+            <span class="navIcon"><img src="assets/icon-test-case.svg" alt="" /></span>
               <span>Test Cases</span>
             </a>
             <a class="navItem" href="suites.html">
-              <span class="navIcon">TS</span>
+            <span class="navIcon"><img src="assets/icon-test-suite.svg" alt="" /></span>
               <span>Test Suites</span>
             </a>
             <div class="navGroup active">
               <a class="navItem active" href="executions.html">
-                <span class="navIcon">ER</span>
+            <span class="navIcon"><img src="assets/icon-test-execution.svg" alt="" /></span>
                 <span>Test Runs & Results</span>
               </a>
-              <div class="navSubtree">
-                <span>Overview</span>
-                <span class="active">Tests & Results</span>
-                <span>Activity</span>
-                <span>Progress</span>
-                <span>Reports</span>
-              </div>
+              <section class="panel executionNavigatorPane">
+                <div class="sectionHeader executionNavHeader">
+                  <h2>Executions</h2>
+                  <span id="executionCount" class="muted"></span>
+                </div>
+                <div id="executionList" class="executionNavList"></div>
+              </section>
             </div>
           </nav>
         </header>
+      </aside>
 
-        <section class="panel executionNavigatorPane">
-          <div class="sectionHeader executionNavHeader">
-            <h2>Executions</h2>
-            <div class="headerActions">
-              <span id="executionCount" class="muted"></span>
-              <button id="toggleExecutionCreatorButton" type="button">New Execution</button>
+      <main id="executionPageRoot" class="appMain executionPageWorkspace executionManagementWorkspace">
+        <section class="panel executionToolsPane">
+          <div class="sectionHeader">
+            <div>
+              <h2>Execution Management</h2>
+              <p class="muted">Search runs, create executions, and manage selected results.</p>
             </div>
+            <button id="toggleExecutionCreatorButton" type="button">New Execution</button>
           </div>
           <div class="executionToolbar">
             <label>
@@ -59,16 +61,19 @@
               Clear
             </button>
           </div>
-          <div id="executionList" class="executionNavList"></div>
         </section>
-      </aside>
 
-      <main id="executionPageRoot" class="appMain executionPageWorkspace executionManagementWorkspace">
         <section id="executionDetailPanel" class="panel executionDetailPane" hidden>
         <div class="sectionHeader">
           <h2>Execution Detail</h2>
           <div class="headerActions">
             <span id="selectedExecutionLabel" class="muted">Select an execution</span>
+            <button id="showExecutionSummaryButton" class="secondary summaryShortcut" type="button">
+              <span>Run Summary</span>
+              <small id="summaryShortcutMeta" class="muted">
+                Pass rate and status totals
+              </small>
+            </button>
             <button id="exportExecutionReportButton" class="secondary" type="button">
               Export Report
             </button>
@@ -159,15 +164,6 @@
           <aside class="workspacePane historyPane">
             <h2>History</h2>
             <div id="historyList" class="history"></div>
-          </aside>
-
-          <aside class="workspacePane runSummaryPane">
-            <button id="showExecutionSummaryButton" class="summaryShortcut" type="button">
-              <span>Run Summary</span>
-              <small id="summaryShortcutMeta" class="muted">
-                Pass rate and status totals
-              </small>
-            </button>
           </aside>
         </div>
         </section>

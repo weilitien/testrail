@@ -68,6 +68,27 @@ let caseBrowserState = createCaseBrowserState();
 let testCaseFormState = createTestCaseFormState();
 let currentExecutionDetail = null;
 
+function initializeSidebarTreeToggles() {
+  document
+    .querySelectorAll(".appSidebar .navGroup.active > .navItem.active")
+    .forEach((navItem) => {
+      const group = navItem.closest(".navGroup");
+      if (!group) {
+        return;
+      }
+
+      navItem.setAttribute("aria-expanded", String(!group.classList.contains("collapsed")));
+      navItem.addEventListener("click", (event) => {
+        event.preventDefault();
+        group.classList.toggle("collapsed");
+        navItem.setAttribute(
+          "aria-expanded",
+          String(!group.classList.contains("collapsed"))
+        );
+      });
+    });
+}
+
 function showToast(message) {
   elements.toast.textContent = message;
   elements.toast.hidden = false;
@@ -474,6 +495,15 @@ function rerenderCurrentExecutionDetail() {
   }
 }
 
+async function selectDefaultExecution() {
+  if (!executions.length) {
+    clearExecutionDetail();
+    return;
+  }
+
+  await selectExecution(executions[0].id);
+}
+
 async function loadInitialData() {
   categories = await api("/categories");
   testCases = await api("/test-cases");
@@ -499,8 +529,10 @@ async function loadInitialData() {
     if (selectedStillExists) {
       await selectExecution(selectedExecutionId);
     } else {
-      clearExecutionDetail();
+      await selectDefaultExecution();
     }
+  } else {
+    await selectDefaultExecution();
   }
 }
 
@@ -935,6 +967,8 @@ if (elements.clearExecutionSearchButton) {
     renderExecutions();
   });
 }
+
+initializeSidebarTreeToggles();
 
 loadInitialData().catch((error) => {
   showToast(error.message);

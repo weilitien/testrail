@@ -58,6 +58,7 @@ import {
 import {
   deleteTestCase,
   duplicateTestCase,
+  restoreTestCase,
   saveTestCase,
 } from "./testCaseActions.js";
 
@@ -144,12 +145,31 @@ function renderTestCases() {
   renderAddCaseCategoryFilter();
   renderSuiteCaseCategoryFilter();
   renderCaseDetail(elements, getSelectedTestCase(testCases, caseBrowserState));
+  renderSelectedCaseActions();
 
   renderExecutionCaseChecklist();
   renderAddCaseChecklist();
   renderSuiteCaseChecklist(elements, testCases);
   renderExecutionSuiteSelect(elements);
 
+}
+
+function renderSelectedCaseActions() {
+  const selectedCase = getSelectedTestCase(testCases, caseBrowserState);
+  const isRetired = Boolean(selectedCase?.is_deleted);
+
+  if (elements.deleteSelectedCaseButton) {
+    elements.deleteSelectedCaseButton.hidden = !selectedCase || isRetired;
+  }
+  if (elements.restoreSelectedCaseButton) {
+    elements.restoreSelectedCaseButton.hidden = !selectedCase || !isRetired;
+  }
+  if (elements.editSelectedCaseButton) {
+    elements.editSelectedCaseButton.disabled = isRetired;
+  }
+  if (elements.duplicateSelectedCaseButton) {
+    elements.duplicateSelectedCaseButton.disabled = isRetired;
+  }
 }
 
 function renderExecutionCaseCategoryFilter() {
@@ -202,7 +222,7 @@ async function renameCategory(category) {
 
 async function deleteCategory(category) {
   const confirmed = window.confirm(
-    `Delete category "${category.name}"? Test cases will become Uncategorized.`
+    `Delete category "${category.name}"?\n\nRelated test cases will become Uncategorized.`
   );
   if (!confirmed) {
     return;
@@ -275,16 +295,10 @@ function renderExecutions() {
         ${renderNavBadge("execution", "Execution")}
         <strong>${escapeHtml(execution.name)}</strong>
       </button>
-      <div class="executionNavActions">
-        <button class="danger" type="button" data-action="delete">Delete</button>
-      </div>
     `;
     row.querySelector("[data-action='view']").addEventListener("click", () => {
       toggleExecution(execution.id).catch((error) => showToast(error.message));
     });
-    row.querySelector("[data-action='delete']").addEventListener("click", () =>
-      deleteExecution(execution)
-    );
     if (isSelectedExecution && currentExecutionDetail?.items) {
       row.appendChild(createExecutionNavTree(currentExecutionDetail.items));
     }
@@ -334,6 +348,7 @@ function createExecutionNavResultItem(item) {
     <span class="caseId">${escapeHtml(item.test_id || "No Test ID")}</span>
     <span class="status ${item.status}">${item.status}</span>
     <strong>${escapeHtml(item.title)}</strong>
+    ${item.original_case_retired ? '<span class="retiredBadge">Retired</span>' : ""}
   `;
   button.querySelector(".executionNavResultCheckbox").addEventListener("click", (event) => {
     event.stopPropagation();
@@ -420,6 +435,9 @@ function clearExecutionDetail() {
   if (elements.selectedExecutionLabel) {
     elements.selectedExecutionLabel.textContent = "Select an execution";
   }
+  if (elements.deleteExecutionButton) {
+    elements.deleteExecutionButton.hidden = true;
+  }
   if (elements.summaryShortcutMeta) {
     elements.summaryShortcutMeta.textContent = "Pass rate and status totals";
   }
@@ -454,6 +472,9 @@ function renderExecutionDetail(detail) {
   renderAddCaseChecklist();
 
   elements.selectedExecutionLabel.textContent = execution.name;
+  if (elements.deleteExecutionButton) {
+    elements.deleteExecutionButton.hidden = false;
+  }
   if (elements.summaryShortcutMeta) {
     elements.summaryShortcutMeta.textContent = `${summary.pass_rate}% pass rate / ${summary.total_cases} case(s)`;
   }
@@ -508,7 +529,8 @@ async function selectDefaultExecution() {
 
 async function loadInitialData() {
   categories = await api("/categories");
-  testCases = await api("/test-cases");
+  const includeRetired = Boolean(elements.showRetiredCasesToggle?.checked);
+  testCases = await api(includeRetired ? "/test-cases?include_retired=true" : "/test-cases");
   renderTestCases();
 
   if (hasSuitePage) {
@@ -619,7 +641,7 @@ async function updateExecutionItemsBulk() {
 
 async function deleteExecution(execution) {
   const confirmed = window.confirm(
-    `Delete execution "${execution.name}"? This also removes its results and history.`
+    `Delete execution "${execution.name}"?\n\nThis also removes its results and history.`
   );
   if (!confirmed) {
     return;
@@ -687,7 +709,7 @@ if (elements.cancelCaseEditButton) {
 if (elements.editSelectedCaseButton) {
   elements.editSelectedCaseButton.addEventListener("click", () => {
     const selectedCase = getSelectedTestCase(testCases, caseBrowserState);
-    if (selectedCase) {
+    if (selectedCase && !selectedCase.is_deleted) {
       startEditingTestCase(elements, testCaseFormState, caseBrowserState, selectedCase);
     }
   });
@@ -696,7 +718,7 @@ if (elements.editSelectedCaseButton) {
 if (elements.duplicateSelectedCaseButton) {
   elements.duplicateSelectedCaseButton.addEventListener("click", async () => {
     const selectedCase = getSelectedTestCase(testCases, caseBrowserState);
-    if (selectedCase) {
+    if (selectedCase && !selectedCase.is_deleted) {
       await duplicateTestCase(selectedCase, {
         elements,
         formState: testCaseFormState,
@@ -712,9 +734,22 @@ if (elements.duplicateSelectedCaseButton) {
 if (elements.deleteSelectedCaseButton) {
   elements.deleteSelectedCaseButton.addEventListener("click", async () => {
     const selectedCase = getSelectedTestCase(testCases, caseBrowserState);
-    if (selectedCase) {
+    if (selectedCase && !selectedCase.is_deleted) {
       await deleteTestCase(selectedCase, {
         selectedExecutionCaseIds,
+        caseBrowserState,
+        refreshData: loadInitialData,
+        showToast,
+      });
+    }
+  });
+}
+
+if (elements.restoreSelectedCaseButton) {
+  elements.restoreSelectedCaseButton.addEventListener("click", async () => {
+    const selectedCase = getSelectedTestCase(testCases, caseBrowserState);
+    if (selectedCase?.is_deleted) {
+      await restoreTestCase(selectedCase, {
         caseBrowserState,
         refreshData: loadInitialData,
         showToast,
@@ -823,6 +858,17 @@ if (elements.exportExecutionReportButton) {
   });
 }
 
+if (elements.deleteExecutionButton) {
+  elements.deleteExecutionButton.addEventListener("click", () => {
+    if (!currentExecutionDetail?.execution) {
+      showToast("Select an execution first");
+      return;
+    }
+
+    deleteExecution(currentExecutionDetail.execution);
+  });
+}
+
 if (elements.selectedExecutionItemForm) {
   elements.selectedExecutionItemForm.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -893,9 +939,17 @@ if (elements.caseSearch) {
 if (elements.casePriorityFilter) {
   elements.casePriorityFilter.addEventListener("change", renderTestCases);
 }
+if (elements.showRetiredCasesToggle) {
+  elements.showRetiredCasesToggle.addEventListener("change", loadInitialData);
+}
 if (elements.clearCaseFiltersButton) {
   elements.clearCaseFiltersButton.addEventListener("click", () => {
     resetCaseFilters(elements, caseBrowserState);
+    if (elements.showRetiredCasesToggle?.checked) {
+      elements.showRetiredCasesToggle.checked = false;
+      loadInitialData();
+      return;
+    }
     renderTestCases();
   });
 }

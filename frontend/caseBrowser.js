@@ -69,7 +69,7 @@ export function renderCategoryTree({
   const visibleForTree = filterTestCases(testCases, elements, state, {
     ignoreGroup: true,
   });
-  const groupedCases = groupTestCasesByCategory(visibleForTree);
+  const groupedCases = getCategoryTreeGroups(visibleForTree, categories, elements);
 
   elements.categoryTree.innerHTML = "";
   elements.categoryTree.appendChild(
@@ -97,7 +97,12 @@ export function renderCategoryTree({
   for (const group of groupedCases) {
     if (!state.initializedCategories.has(group.category)) {
       state.initializedCategories.add(group.category);
-      state.collapsedCategories.add(group.category);
+      const isActiveCategory =
+        state.selectedCaseGroup.type === "category" &&
+        state.selectedCaseGroup.category === group.category;
+      if (!isActiveCategory) {
+        state.collapsedCategories.add(group.category);
+      }
     }
   }
 
@@ -112,6 +117,30 @@ export function renderCategoryTree({
       })
     );
   }
+}
+
+function getCategoryTreeGroups(testCases, categories, elements) {
+  const groups = groupTestCasesByCategory(testCases);
+  const groupMap = new Map(groups.map((group) => [group.category, group]));
+  const searchText = elements.caseSearch ? elements.caseSearch.value.trim() : "";
+  const priority = elements.casePriorityFilter ? elements.casePriorityFilter.value : "";
+  const showEmptyManagedCategories = !searchText && !priority;
+
+  if (showEmptyManagedCategories) {
+    for (const category of categories) {
+      if (!groupMap.has(category.name)) {
+        groupMap.set(category.name, {
+          category: category.name,
+          label: category.name,
+          items: [],
+        });
+      }
+    }
+  }
+
+  return Array.from(groupMap.values()).sort((a, b) =>
+    a.label.localeCompare(b.label)
+  );
 }
 
 function createCaseCategoryGroup({ group, categoryRecord, state, callbacks }) {
@@ -165,12 +194,21 @@ function createCaseCategoryGroup({ group, categoryRecord, state, callbacks }) {
 
 function createCaseTreeItem(testCase, state, callbacks) {
   const row = document.createElement("button");
-  row.className = `caseTreeCase ${state.selectedCaseId === testCase.id ? "selected" : ""}`;
+  row.className = [
+    "caseTreeCase",
+    state.selectedCaseId === testCase.id ? "selected" : "",
+    testCase.is_deleted ? "retired" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
   row.type = "button";
   row.innerHTML = `
     ${renderCaseIdentity(testCase)}
-    <span class="priority ${escapeHtml(testCase.priority || "Medium")}">
-      ${escapeHtml(testCase.priority || "Medium")}
+    <span class="caseTreeMeta">
+      <span class="priority ${escapeHtml(testCase.priority || "Medium")}">
+        ${escapeHtml(testCase.priority || "Medium")}
+      </span>
+      ${testCase.is_deleted ? '<span class="retiredBadge">Retired</span>' : ""}
     </span>
   `;
   row.addEventListener("click", () => {
@@ -304,12 +342,18 @@ export function renderCaseDetail(elements, selectedCase) {
     <span class="priority ${escapeHtml(selectedCase.priority || "Medium")}">
       ${escapeHtml(selectedCase.priority || "Medium")}
     </span>
+    ${selectedCase.is_deleted ? '<span class="retiredBadge">Retired</span>' : ""}
   `;
   elements.caseDetailBody.innerHTML = `
     <h3>${escapeHtml(selectedCase.title)}</h3>
     <div class="metaLine">
       <span>${escapeHtml(selectedCase.category || "No category")}</span>
       <span>Created ${formatDate(selectedCase.created_at)}</span>
+      ${
+        selectedCase.is_deleted && selectedCase.deleted_at
+          ? `<span>Retired ${formatDate(selectedCase.deleted_at)}</span>`
+          : ""
+      }
     </div>
     <div class="detailBlock">
       <strong>Steps</strong>

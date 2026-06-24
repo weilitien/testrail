@@ -67,3 +67,11 @@
 .suiteFormPanel {
   margin-top: 18px;
 }
+
+.suiteFormHeader {
+  margin-bottom: 12px;
+}
+
+.suiteFormHeader h2 {
+  margin-bottom: 0;
+}

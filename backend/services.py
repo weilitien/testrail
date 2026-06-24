@@ -57,7 +57,9 @@ def init_db() -> None:
                 expected_result TEXT NOT NULL DEFAULT '',
                 test_data TEXT NOT NULL DEFAULT '',
                 created_at TEXT NOT NULL,
-                current_version INTEGER NOT NULL DEFAULT 1
+                current_version INTEGER NOT NULL DEFAULT 1,
+                is_deleted INTEGER NOT NULL DEFAULT 0,
+                deleted_at TEXT NOT NULL DEFAULT ''
             );
 
             CREATE TABLE IF NOT EXISTS test_case_steps (
@@ -140,7 +142,9 @@ def init_db() -> None:
                 expected_result TEXT NOT NULL DEFAULT '',
                 test_data TEXT NOT NULL DEFAULT '',
                 created_at TEXT NOT NULL,
-                current_version INTEGER NOT NULL DEFAULT 1
+                current_version INTEGER NOT NULL DEFAULT 1,
+                is_deleted INTEGER NOT NULL DEFAULT 0,
+                deleted_at TEXT NOT NULL DEFAULT ''
             );
 
             CREATE TABLE IF NOT EXISTS test_case_steps (
@@ -215,6 +219,7 @@ def init_db() -> None:
             """
         conn.executescript(schema)
         ensure_versioning_columns(conn)
+        ensure_soft_delete_columns(conn)
         sync_categories_from_test_cases(conn)
         sync_steps_from_legacy_fields(conn)
         backfill_execution_item_snapshots(conn)
@@ -264,6 +269,22 @@ def ensure_versioning_columns(conn) -> None:
     }
     for column_name, definition in snapshot_columns.items():
         add_column_if_missing(conn, "execution_items", column_name, definition)
+
+
+def ensure_soft_delete_columns(conn) -> None:
+    """Add lifecycle columns so test cases can be retired without losing history."""
+    add_column_if_missing(
+        conn,
+        "test_cases",
+        "is_deleted",
+        "INTEGER NOT NULL DEFAULT 0",
+    )
+    add_column_if_missing(
+        conn,
+        "test_cases",
+        "deleted_at",
+        "TEXT NOT NULL DEFAULT ''",
+    )
 
 
 def normalize_category_name(name: str) -> str:
@@ -443,7 +464,7 @@ def create_execution_item_from_snapshot(
 ):
     """Add a test case to an execution using a frozen snapshot of its current data."""
     test_case = conn.execute(
-        "SELECT * FROM test_cases WHERE id = ?",
+        "SELECT * FROM test_cases WHERE id = ? AND is_deleted = 0",
         (test_case_id,),
     ).fetchone()
     if not test_case:
@@ -545,13 +566,17 @@ def backfill_execution_item_snapshots(conn) -> None:
 
 
 def find_missing_test_case_ids(conn: sqlite3.Connection, test_case_ids: list[int]) -> list[int]:
-    """Return IDs that were requested but do not exist in the test_cases table."""
+    """Return requested IDs that are missing or no longer active."""
     if not test_case_ids:
         return []
 
     placeholders = ",".join("?" for _ in test_case_ids)
     found_cases = conn.execute(
-        f"SELECT id FROM test_cases WHERE id IN ({placeholders})",
+        f"""
+        SELECT id
+        FROM test_cases
+        WHERE id IN ({placeholders}) AND is_deleted = 0
+        """,
         test_case_ids,
     ).fetchall()
     found_ids = {row["id"] for row in found_cases}

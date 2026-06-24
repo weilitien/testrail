@@ -77,6 +77,10 @@
                   <option value="Low">Low</option>
                 </select>
               </label>
+              <label class="inlineToggle">
+                <input id="showRetiredCasesToggle" type="checkbox" />
+                Show retired
+              </label>
               <button id="clearCaseFiltersButton" class="secondary" type="button">Clear Filters</button>
             </div>
           </div>
@@ -85,19 +89,24 @@
         <aside class="panel caseDetailPane">
           <div id="caseDetailEmpty" class="emptyState">
             <h2>Select a Test Case</h2>
-            <p class="muted">Choose a case from the list to view details, edit, duplicate, or delete it.</p>
+            <p class="muted">Choose a case from the list to view details, edit, duplicate, or retire it.</p>
           </div>
 
           <div id="caseDetailContent" hidden>
             <div class="sectionHeader">
               <h2 id="selectedCaseTitle">Test Case Detail</h2>
-              <span id="selectedCasePriority"></span>
+              <div class="headerActions">
+                <span id="selectedCasePriority"></span>
+                <button id="deleteSelectedCaseButton" class="danger" type="button">Retire Case</button>
+                <button id="restoreSelectedCaseButton" class="secondary" type="button" hidden>
+                  Restore Case
+                </button>
+              </div>
             </div>
             <div id="caseDetailBody" class="caseDetailBody"></div>
             <div class="formActions detailActions">
               <button id="editSelectedCaseButton" class="secondary" type="button">Edit</button>
               <button id="duplicateSelectedCaseButton" class="secondary" type="button">Duplicate</button>
-              <button id="deleteSelectedCaseButton" class="danger" type="button">Delete</button>
             </div>
           </div>
 

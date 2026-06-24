@@ -75,7 +75,12 @@
         </div>
 
         <div class="caseFormPanel suiteFormPanel">
-          <h2 id="suiteFormTitle">Create Test Suite</h2>
+          <div class="formSectionHeader suiteFormHeader">
+            <h2 id="suiteFormTitle">Create Test Suite</h2>
+            <button id="deleteSuiteButton" class="danger" type="button" hidden>
+              Delete Suite
+            </button>
+          </div>
           <form id="suiteForm">
             <div class="formGrid">
               <label>
@@ -110,9 +115,6 @@
 
             <div class="formActions">
               <button id="suiteSubmitButton" type="submit">Create Suite</button>
-              <button id="deleteSuiteButton" class="danger" type="button" hidden>
-                Delete Suite
-              </button>
             </div>
           </form>
         </div>

@@ -1,6 +1,6 @@
 .caseToolbar {
   display: grid;
-  grid-template-columns: minmax(240px, 1fr) 180px auto;
+  grid-template-columns: minmax(240px, 1fr) 180px auto auto;
   gap: 12px;
   align-items: end;
   margin-bottom: 14px;
@@ -8,6 +8,20 @@
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--control-bg);
+}
+
+.inlineToggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.inlineToggle input {
+  width: auto;
 }
 
 .caseNavigatorPane .caseToolbar {
@@ -188,10 +202,40 @@
   line-height: 1.25;
 }
 
+.caseTreeCase .caseTreeMeta {
+  display: flex;
+  align-items: center;
+  justify-content: end;
+  gap: 6px;
+  min-width: 0;
+}
+
 .caseTreeCase .priority {
   min-width: 0;
   padding: 4px 8px;
   font-size: 11px;
+  white-space: nowrap;
+}
+
+.caseTreeCase.retired {
+  opacity: 0.72;
+}
+
+.caseTreeCase.retired strong {
+  text-decoration: line-through;
+}
+
+.retiredBadge {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 3px 7px;
+  background: #f2f4f7;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1;
   white-space: nowrap;
 }
 

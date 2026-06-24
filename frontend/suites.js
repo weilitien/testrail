@@ -199,7 +199,9 @@ export async function deleteSelectedSuite(elements, showToast, testCases) {
   }
 
   const suiteName = elements.suiteName?.value.trim() || "selected suite";
-  const confirmed = window.confirm(`Delete test suite "${suiteName}"?`);
+  const confirmed = window.confirm(
+    `Delete test suite "${suiteName}"?\n\nThis does not delete the original test cases.`
+  );
   if (!confirmed) {
     return false;
   }

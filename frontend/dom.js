@@ -35,6 +35,7 @@ export const elements = {
   editSelectedCaseButton: document.querySelector("#editSelectedCaseButton"),
   duplicateSelectedCaseButton: document.querySelector("#duplicateSelectedCaseButton"),
   deleteSelectedCaseButton: document.querySelector("#deleteSelectedCaseButton"),
+  restoreSelectedCaseButton: document.querySelector("#restoreSelectedCaseButton"),
   executionForm: document.querySelector("#executionForm"),
   executionPageRoot: document.querySelector("#executionPageRoot"),
   executionCreatorPane: document.querySelector("#executionCreatorPane"),
@@ -42,6 +43,7 @@ export const elements = {
   closeExecutionCreatorButton: document.querySelector("#closeExecutionCreatorButton"),
   caseSearch: document.querySelector("#caseSearch"),
   casePriorityFilter: document.querySelector("#casePriorityFilter"),
+  showRetiredCasesToggle: document.querySelector("#showRetiredCasesToggle"),
   clearCaseFiltersButton: document.querySelector("#clearCaseFiltersButton"),
   caseCsvFile: document.querySelector("#caseCsvFile"),
   downloadCsvTemplateButton: document.querySelector("#downloadCsvTemplateButton"),
@@ -88,6 +90,7 @@ export const elements = {
   executionEmptyPanel: document.querySelector("#executionEmptyPanel"),
   selectedExecutionLabel: document.querySelector("#selectedExecutionLabel"),
   exportExecutionReportButton: document.querySelector("#exportExecutionReportButton"),
+  deleteExecutionButton: document.querySelector("#deleteExecutionButton"),
   toast: document.querySelector("#toast"),
 };
 

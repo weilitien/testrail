@@ -56,7 +56,7 @@ export async function deleteTestCase(testCase, {
   showToast,
 }) {
   const confirmed = window.confirm(
-    `Delete test case "${testCase.title}"? This also removes it from executions.`
+    `Retire test case "${testCase.title}"?\n\nIt will be hidden from reusable test case lists, but existing execution results and history will be kept.`
   );
   if (!confirmed) {
     return;
@@ -67,6 +67,19 @@ export async function deleteTestCase(testCase, {
   if (caseBrowserState.selectedCaseId === testCase.id) {
     caseBrowserState.selectedCaseId = null;
   }
-  showToast("Test case deleted");
+  showToast("Test case retired");
+  await refreshData();
+}
+
+export async function restoreTestCase(testCase, {
+  caseBrowserState,
+  refreshData,
+  showToast,
+}) {
+  const restored = await api(`/test-cases/${testCase.id}/restore`, {
+    method: "POST",
+  });
+  caseBrowserState.selectedCaseId = restored.id;
+  showToast("Test case restored");
   await refreshData();
 }

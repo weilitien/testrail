@@ -23,7 +23,8 @@ The app has three main workspaces:
 - Create test cases
 - Edit test cases
 - Duplicate test cases
-- Delete test cases
+- Retire test cases without deleting historical execution results
+- Show and restore retired test cases
 - Import test cases from CSV
 - Preview CSV imports before confirming
 - Automatic test case version number updates when a test case is edited
@@ -70,6 +71,7 @@ Test cases include:
 - Bulk update execution results selected from the left-side execution tree
 - Select one result from the left-side execution tree and edit it in the `Selected Result` panel
 - View the frozen test case version used by each execution result
+- See when the original reusable test case for an execution result has been retired
 - Update result status: `NOT_RUN`, `PASS`, `FAIL`, `BLOCKED`, `SKIPPED`
 - Add actual result notes
 - View execution history
@@ -97,7 +99,7 @@ http://localhost:5173/index.html
 Layout:
 
 - Left sidebar: workspace navigation and searchable test case tree grouped by category, with a clear selected-case highlight
-- Main panel: category manager, search filters, create/edit test case tools, selected test case detail, and CSV import
+- Main panel: category manager, search filters including retired-case visibility, create/edit/restore test case tools, selected test case detail, and CSV import
 
 ### Executions Page
 
@@ -142,6 +144,11 @@ backend/
   Procfile
   railway.json
   runtime.txt
+  routers/
+    categories.py
+    executions.py
+    test_cases.py
+    test_suites.py
   schemas.py
   services.py
 frontend/
@@ -363,9 +370,11 @@ window.API_BASE = "https://your-api.up.railway.app";
 ### Test Cases
 
 - `GET /test-cases`
+- `GET /test-cases?include_retired=true`
 - `POST /test-cases`
 - `POST /test-cases/bulk`
 - `PUT /test-cases/{test_case_id}`
+- `POST /test-cases/{test_case_id}/restore`
 - `POST /test-cases/{test_case_id}/duplicate`
 - `DELETE /test-cases/{test_case_id}`
 
@@ -517,7 +526,7 @@ Bulk updates also write one history entry per updated result.
 - SQLite foreign keys are enabled when using the SQLite fallback.
 - If an older local SQLite database still has retired Feature/Sub Feature columns, the backend clears and rebuilds the local SQLite tables on startup.
 - Deleting a category does not delete test cases. Related test cases become Uncategorized.
-- Deleting a test case also removes related execution items and history through cascading deletes.
+- Retiring a test case hides it from active reusable test case lists. Existing execution results and history keep their frozen snapshots.
 - Deleting an execution also removes its results and history.
 - Existing executions keep frozen test case snapshots. Editing a reusable test case does not rewrite historical execution results.
 - The frontend is intentionally plain HTML/CSS/JavaScript with native ES modules, so no build step is required.

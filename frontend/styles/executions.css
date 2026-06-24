@@ -67,16 +67,6 @@
   overflow-wrap: anywhere;
 }
 
-.executionNavActions {
-  display: flex;
-  align-items: start;
-}
-
-.executionNavActions button {
-  padding: 6px 9px;
-  font-size: 12px;
-}
-
 .executionNavTree {
   grid-column: 1 / -1;
   display: grid;
@@ -126,7 +116,7 @@
 
 .executionNavResultItem {
   display: grid;
-  grid-template-columns: 16px minmax(70px, 0.8fr) auto;
+  grid-template-columns: 16px minmax(70px, 0.8fr) auto auto;
   gap: 6px 8px;
   align-items: center;
   width: 100%;
@@ -174,7 +164,7 @@
 }
 
 .executionNavResultItem strong {
-  grid-column: 2 / -1;
+  grid-column: 2 / 4;
   min-width: 0;
   color: #2f3942;
   font-size: 12px;
@@ -187,6 +177,25 @@
   font-size: 10px;
   white-space: nowrap;
   justify-self: end;
+}
+
+.executionNavResultItem .retiredBadge {
+  justify-self: end;
+}
+
+.retiredNotice {
+  display: grid;
+  gap: 4px;
+  border: 1px solid #d7e3ea;
+  border-radius: 8px;
+  padding: 12px;
+  background: #f4f8fb;
+}
+
+.retiredNotice p,
+.retiredNotice small {
+  margin-bottom: 0;
+  color: var(--muted);
 }
 
 .executionDetailPane {

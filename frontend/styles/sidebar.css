@@ -138,16 +138,8 @@
   padding: 6px 7px;
 }
 
-.appSidebar .executionNavItem:not(.selected) .executionNavActions {
-  display: none;
-}
-
 .appSidebar .executionNavButton strong {
   font-size: 13px;
-}
-
-.appSidebar .executionNavActions button {
-  padding: 5px 8px;
 }
 
 .appSidebar .executionNavTree {

@@ -208,9 +208,23 @@ export function renderSelectedExecutionItemDetail(elements, item) {
       </span>
       <span>Version ${item.snapshot_version || 1}</span>
       <span class="status ${item.status}">${item.status}</span>
+      ${item.original_case_retired ? '<span class="retiredBadge">Retired source</span>' : ""}
     `;
   }
   elements.selectedExecutionItemBody.innerHTML = `
+    ${
+      item.original_case_retired
+        ? `<div class="retiredNotice">
+            <strong>Reusable test case retired</strong>
+            <p>This result keeps the frozen snapshot captured when the execution was created.</p>
+            ${
+              item.original_case_deleted_at
+                ? `<small>Retired ${formatDate(item.original_case_deleted_at)}</small>`
+                : ""
+            }
+          </div>`
+        : ""
+    }
     <div class="detailBlock">
       <strong>Steps</strong>
       ${renderStepsTable(getDisplaySteps(item))}

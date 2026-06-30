@@ -90,6 +90,11 @@ export const elements = {
   executionEmptyPanel: document.querySelector("#executionEmptyPanel"),
   selectedExecutionLabel: document.querySelector("#selectedExecutionLabel"),
   exportExecutionReportButton: document.querySelector("#exportExecutionReportButton"),
+  showRerunExecutionButton: document.querySelector("#showRerunExecutionButton"),
+  rerunExecutionForm: document.querySelector("#rerunExecutionForm"),
+  rerunExecutionName: document.querySelector("#rerunExecutionName"),
+  rerunExecutionDescription: document.querySelector("#rerunExecutionDescription"),
+  cancelRerunExecutionButton: document.querySelector("#cancelRerunExecutionButton"),
   deleteExecutionButton: document.querySelector("#deleteExecutionButton"),
   toast: document.querySelector("#toast"),
 };

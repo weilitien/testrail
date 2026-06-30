@@ -6,6 +6,7 @@ from schemas import (
     ExecutionCreate,
     ExecutionItemUpdate,
     ExecutionItemsBulkUpdate,
+    ExecutionRerunCreate,
 )
 from services import (
     create_execution_item_from_snapshot,
@@ -19,20 +20,24 @@ from services import (
 router = APIRouter(tags=["executions"])
 
 
+def ensure_unique_execution_name(conn, execution_name: str) -> None:
+    existing_execution = conn.execute(
+        "SELECT id FROM executions WHERE lower(name) = lower(?)",
+        (execution_name,),
+    ).fetchone()
+    if existing_execution:
+        raise HTTPException(
+            status_code=409,
+            detail="Execution name already exists",
+        )
+
+
 @router.post("/executions", status_code=201)
 def create_execution(payload: ExecutionCreate):
     created_at = now_iso()
     execution_name = payload.name.strip()
     with get_db() as conn:
-        existing_execution = conn.execute(
-            "SELECT id FROM executions WHERE lower(name) = lower(?)",
-            (execution_name,),
-        ).fetchone()
-        if existing_execution:
-            raise HTTPException(
-                status_code=409,
-                detail="Execution name already exists",
-            )
+        ensure_unique_execution_name(conn, execution_name)
 
         test_case_ids = list(dict.fromkeys(payload.test_case_ids))
         if test_case_ids:
@@ -66,6 +71,73 @@ def create_execution(payload: ExecutionCreate):
 
     data = row_to_dict(execution)
     data["added_count"] = len(test_case_ids)
+    return data
+
+
+@router.post("/executions/{execution_id}/rerun", status_code=201)
+def rerun_execution(execution_id: int, payload: ExecutionRerunCreate):
+    created_at = now_iso()
+    execution_name = payload.name.strip()
+    if not execution_name:
+        raise HTTPException(status_code=400, detail="Execution name is required")
+
+    with get_db() as conn:
+        source_execution = conn.execute(
+            "SELECT id FROM executions WHERE id = ?",
+            (execution_id,),
+        ).fetchone()
+        if not source_execution:
+            raise HTTPException(status_code=404, detail="Execution not found")
+
+        ensure_unique_execution_name(conn, execution_name)
+
+        source_items = conn.execute(
+            """
+            SELECT
+                i.test_case_id,
+                COALESCE(tc.is_deleted, 1) AS is_deleted,
+                MIN(i.id) AS first_item_id
+            FROM execution_items i
+            LEFT JOIN test_cases tc ON tc.id = i.test_case_id
+            WHERE i.execution_id = ?
+            GROUP BY i.test_case_id, tc.is_deleted
+            ORDER BY first_item_id
+            """,
+            (execution_id,),
+        ).fetchall()
+
+        active_test_case_ids = [
+            row["test_case_id"] for row in source_items if row["is_deleted"] == 0
+        ]
+        skipped_retired_count = len(source_items) - len(active_test_case_ids)
+
+        cursor = conn.execute(
+            """
+            INSERT INTO executions (name, description, created_at)
+            VALUES (?, ?, ?)
+            """,
+            (execution_name, payload.description, created_at),
+        )
+        new_execution_id = cursor.lastrowid
+
+        added_count = 0
+        for test_case_id in active_test_case_ids:
+            item_cursor = create_execution_item_from_snapshot(
+                conn,
+                new_execution_id,
+                test_case_id,
+                created_at,
+            )
+            if item_cursor:
+                added_count += item_cursor.rowcount
+
+        execution = conn.execute(
+            "SELECT * FROM executions WHERE id = ?", (new_execution_id,)
+        ).fetchone()
+
+    data = row_to_dict(execution)
+    data["added_count"] = added_count
+    data["skipped_retired_count"] = skipped_retired_count
     return data
 
 

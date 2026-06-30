@@ -77,11 +77,39 @@
             <button id="exportExecutionReportButton" class="secondary" type="button">
               Export Report
             </button>
+            <button id="showRerunExecutionButton" class="secondary" type="button">
+              Rerun
+            </button>
             <button id="deleteExecutionButton" class="danger" type="button" hidden>
               Delete Execution
             </button>
           </div>
         </div>
+
+        <form id="rerunExecutionForm" class="rerunExecutionPanel" hidden>
+          <div>
+            <strong>New Run from This Execution</strong>
+            <p class="muted">
+              Creates a fresh execution with NOT_RUN results. Retired source cases are skipped.
+            </p>
+          </div>
+          <div class="formGrid">
+            <label>
+              Name
+              <input id="rerunExecutionName" required placeholder="Regression Run - Round 2" />
+            </label>
+            <label>
+              Description
+              <input id="rerunExecutionDescription" placeholder="Second pass after fixes" />
+            </label>
+          </div>
+          <div class="formActions">
+            <button type="submit">Create Rerun</button>
+            <button id="cancelRerunExecutionButton" class="secondary" type="button">
+              Cancel
+            </button>
+          </div>
+        </form>
 
         <details class="addCasesPanel">
           <summary>

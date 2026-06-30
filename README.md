@@ -58,6 +58,7 @@ Test cases include:
 
 - Create executions by selecting test cases from a checkbox list
 - Create executions faster by applying a Test Suite to preselect its test cases
+- Create a rerun from an existing execution with a new name and description
 - Filter and select execution test cases by category
 - Execution names must be unique
 - Delete executions
@@ -112,7 +113,7 @@ http://localhost:5173/executions.html
 Layout:
 
 - Left sidebar: workspace navigation and execution tree. The selected execution expands to show its test cases and result statuses
-- Main panel: execution search, create execution action, selected execution detail, run summary shortcut, report export, add/bulk tools, and focused selected result editor
+- Main panel: execution search, create execution action, selected execution detail, rerun form, run summary shortcut, report export, add/bulk tools, and focused selected result editor
 - The first execution is selected automatically when the page opens
 - Bottom of the main panel: history
 - Create execution opens in the main panel with selectable test cases
@@ -306,6 +307,31 @@ http://localhost:8000
 
 Manual backend runs use SQLite by default. Set `DATABASE_URL` if you want to connect the backend to PostgreSQL outside Docker.
 
+### Backend Tests
+
+Install the development test dependency once:
+
+```bash
+cd backend
+source .venv/bin/activate
+pip install -r requirements-dev.txt
+```
+
+Run the backend tests from the repo root:
+
+```bash
+backend/.venv/bin/python -m pytest backend/tests
+```
+
+Run the PostgreSQL smoke test against the Docker database:
+
+```bash
+POSTGRES_TEST_DATABASE_URL="postgresql+psycopg://mini_testrail:mini_testrail_password@localhost:5432/mini_testrail" \
+  backend/.venv/bin/python -m pytest backend/tests -m postgres
+```
+
+The PostgreSQL smoke test clears the configured test database tables before it runs.
+
 ### Frontend
 
 Serve the frontend folder:
@@ -399,6 +425,7 @@ window.API_BASE = "https://your-api.up.railway.app";
 - `POST /executions`
 - `GET /executions/{execution_id}`
 - `DELETE /executions/{execution_id}`
+- `POST /executions/{execution_id}/rerun`
 - `POST /executions/{execution_id}/test-cases`
 - `PATCH /execution-items/bulk`
 - `PATCH /execution-items/{item_id}`
@@ -495,6 +522,18 @@ Execution names must be unique. If a duplicate name is submitted, the API return
   "detail": "Execution name already exists"
 }
 ```
+
+### Rerun an Execution
+
+```json
+{
+  "name": "Regression Run - Round 2",
+  "description": "Second pass after fixes"
+}
+```
+
+The backend creates a new execution from the source execution's test cases. New results start with `NOT_RUN`, actual result notes are empty, and snapshots are captured from the current active reusable test cases.
+Retired source test cases are skipped and reported in `skipped_retired_count`.
 
 ### Update an Execution Result
 

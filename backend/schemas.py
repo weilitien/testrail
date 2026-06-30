@@ -36,6 +36,11 @@ class ExecutionCreate(BaseModel):
     test_case_ids: list[int] = []
 
 
+class ExecutionRerunCreate(BaseModel):
+    name: str = Field(..., min_length=1)
+    description: str = ""
+
+
 class TestSuiteCreate(BaseModel):
     name: str = Field(..., min_length=1)
     description: str = ""

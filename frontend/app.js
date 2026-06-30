@@ -416,6 +416,36 @@ function hideExecutionCreator() {
   }
 }
 
+function getRerunName(baseName) {
+  const existingNames = new Set(executions.map((execution) => execution.name.toLowerCase()));
+  let index = 2;
+  let candidate = `${baseName} - Round ${index}`;
+  while (existingNames.has(candidate.toLowerCase())) {
+    index += 1;
+    candidate = `${baseName} - Round ${index}`;
+  }
+  return candidate;
+}
+
+function showRerunExecutionForm() {
+  if (!currentExecutionDetail?.execution || !elements.rerunExecutionForm) {
+    showToast("Select an execution first");
+    return;
+  }
+
+  const execution = currentExecutionDetail.execution;
+  elements.rerunExecutionName.value = getRerunName(execution.name);
+  elements.rerunExecutionDescription.value = execution.description || "";
+  elements.rerunExecutionForm.hidden = false;
+  elements.rerunExecutionName.focus();
+}
+
+function hideRerunExecutionForm() {
+  if (elements.rerunExecutionForm) {
+    elements.rerunExecutionForm.hidden = true;
+  }
+}
+
 function clearExecutionDetail() {
   selectedExecutionId = null;
   selectedExecutionItemId = null;
@@ -429,6 +459,7 @@ function clearExecutionDetail() {
   if (elements.executionCreatorPane) {
     elements.executionCreatorPane.hidden = true;
   }
+  hideRerunExecutionForm();
   if (elements.executionEmptyPanel) {
     elements.executionEmptyPanel.hidden = false;
   }
@@ -582,6 +613,7 @@ async function applySuiteToExecutionCreator() {
 }
 
 async function selectExecution(executionId) {
+  hideRerunExecutionForm();
   if (selectedExecutionId !== executionId) {
     selectedExecutionItemId = null;
     selectedExecutionItemIds = new Set();
@@ -855,6 +887,47 @@ if (elements.showExecutionSummaryButton) {
 if (elements.exportExecutionReportButton) {
   elements.exportExecutionReportButton.addEventListener("click", () => {
     exportExecutionReport(currentExecutionDetail, showToast);
+  });
+}
+
+if (elements.showRerunExecutionButton) {
+  elements.showRerunExecutionButton.addEventListener("click", showRerunExecutionForm);
+}
+
+if (elements.cancelRerunExecutionButton) {
+  elements.cancelRerunExecutionButton.addEventListener("click", hideRerunExecutionForm);
+}
+
+if (elements.rerunExecutionForm) {
+  elements.rerunExecutionForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!currentExecutionDetail?.execution) {
+      showToast("Select an execution first");
+      return;
+    }
+
+    try {
+      const execution = await api(
+        `/executions/${currentExecutionDetail.execution.id}/rerun`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            name: elements.rerunExecutionName.value,
+            description: elements.rerunExecutionDescription.value,
+          }),
+        }
+      );
+      hideRerunExecutionForm();
+      const skippedText = execution.skipped_retired_count
+        ? `, skipped ${execution.skipped_retired_count} retired case(s)`
+        : "";
+      showToast(`Created rerun with ${execution.added_count} case(s)${skippedText}`);
+      await loadInitialData();
+      await selectExecution(execution.id);
+      elements.detailPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+    } catch (error) {
+      showToast(error.message);
+    }
   });
 }
 

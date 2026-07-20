@@ -36,6 +36,7 @@ def ensure_unique_execution_name(conn, execution_name: str) -> None:
 def create_execution(payload: ExecutionCreate):
     created_at = now_iso()
     execution_name = payload.name.strip()
+    execution_version = payload.version.strip()
     with get_db() as conn:
         ensure_unique_execution_name(conn, execution_name)
 
@@ -50,10 +51,10 @@ def create_execution(payload: ExecutionCreate):
 
         cursor = conn.execute(
             """
-            INSERT INTO executions (name, description, created_at)
-            VALUES (?, ?, ?)
+            INSERT INTO executions (name, version, description, created_at)
+            VALUES (?, ?, ?, ?)
             """,
-            (execution_name, payload.description, created_at),
+            (execution_name, execution_version, payload.description, created_at),
         )
         execution_id = cursor.lastrowid
 
@@ -78,6 +79,7 @@ def create_execution(payload: ExecutionCreate):
 def rerun_execution(execution_id: int, payload: ExecutionRerunCreate):
     created_at = now_iso()
     execution_name = payload.name.strip()
+    execution_version = payload.version.strip()
     if not execution_name:
         raise HTTPException(status_code=400, detail="Execution name is required")
 
@@ -113,10 +115,10 @@ def rerun_execution(execution_id: int, payload: ExecutionRerunCreate):
 
         cursor = conn.execute(
             """
-            INSERT INTO executions (name, description, created_at)
-            VALUES (?, ?, ?)
+            INSERT INTO executions (name, version, description, created_at)
+            VALUES (?, ?, ?, ?)
             """,
-            (execution_name, payload.description, created_at),
+            (execution_name, execution_version, payload.description, created_at),
         )
         new_execution_id = cursor.lastrowid
 

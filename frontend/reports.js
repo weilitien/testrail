@@ -44,6 +44,7 @@ function buildExecutionReportHtml(detail) {
 
       <section class="reportMeta">
         <div><span>Generated</span><strong>${escapeHtml(generatedAt)}</strong></div>
+        <div><span>Version</span><strong>${escapeHtml(execution.version || "N/A")}</strong></div>
         <div><span>Total Cases</span><strong>${summary.total_cases}</strong></div>
         <div><span>Passed</span><strong>${summary.passed_cases}</strong></div>
         <div><span>Pass Rate</span><strong>${summary.pass_rate}%</strong></div>
@@ -279,7 +280,7 @@ function getReportStyles() {
 
     .reportMeta {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(5, minmax(0, 1fr));
       gap: 12px;
       margin-top: 18px;
       padding: 18px;

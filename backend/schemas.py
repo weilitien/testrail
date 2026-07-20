@@ -32,12 +32,14 @@ class TestCaseBulkCreate(BaseModel):
 
 class ExecutionCreate(BaseModel):
     name: str = Field(..., min_length=1)
+    version: str = ""
     description: str = ""
     test_case_ids: list[int] = []
 
 
 class ExecutionRerunCreate(BaseModel):
     name: str = Field(..., min_length=1)
+    version: str = ""
     description: str = ""
 
 

@@ -73,6 +73,7 @@ def init_db() -> None:
             CREATE TABLE IF NOT EXISTS executions (
                 id SERIAL PRIMARY KEY,
                 name TEXT NOT NULL,
+                version TEXT NOT NULL DEFAULT '',
                 description TEXT NOT NULL DEFAULT '',
                 created_at TEXT NOT NULL
             );
@@ -159,6 +160,7 @@ def init_db() -> None:
             CREATE TABLE IF NOT EXISTS executions (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL,
+                version TEXT NOT NULL DEFAULT '',
                 description TEXT NOT NULL DEFAULT '',
                 created_at TEXT NOT NULL
             );
@@ -218,6 +220,7 @@ def init_db() -> None:
             );
             """
         conn.executescript(schema)
+        ensure_execution_columns(conn)
         ensure_versioning_columns(conn)
         ensure_soft_delete_columns(conn)
         sync_categories_from_test_cases(conn)
@@ -269,6 +272,16 @@ def ensure_versioning_columns(conn) -> None:
     }
     for column_name, definition in snapshot_columns.items():
         add_column_if_missing(conn, "execution_items", column_name, definition)
+
+
+def ensure_execution_columns(conn) -> None:
+    """Add run-level metadata columns for existing databases."""
+    add_column_if_missing(
+        conn,
+        "executions",
+        "version",
+        "TEXT NOT NULL DEFAULT ''",
+    )
 
 
 def ensure_soft_delete_columns(conn) -> None:

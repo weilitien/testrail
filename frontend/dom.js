@@ -93,6 +93,7 @@ export const elements = {
   showRerunExecutionButton: document.querySelector("#showRerunExecutionButton"),
   rerunExecutionForm: document.querySelector("#rerunExecutionForm"),
   rerunExecutionName: document.querySelector("#rerunExecutionName"),
+  rerunExecutionVersion: document.querySelector("#rerunExecutionVersion"),
   rerunExecutionDescription: document.querySelector("#rerunExecutionDescription"),
   cancelRerunExecutionButton: document.querySelector("#cancelRerunExecutionButton"),
   deleteExecutionButton: document.querySelector("#deleteExecutionButton"),

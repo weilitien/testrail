@@ -374,7 +374,7 @@ function filterExecutions(executionList) {
     : "";
 
   return executionList.filter((execution) => {
-    const searchableText = [execution.name, execution.description]
+    const searchableText = [execution.name, execution.version, execution.description]
       .join(" ")
       .toLowerCase();
 
@@ -435,6 +435,9 @@ function showRerunExecutionForm() {
 
   const execution = currentExecutionDetail.execution;
   elements.rerunExecutionName.value = getRerunName(execution.name);
+  if (elements.rerunExecutionVersion) {
+    elements.rerunExecutionVersion.value = execution.version || "";
+  }
   elements.rerunExecutionDescription.value = execution.description || "";
   elements.rerunExecutionForm.hidden = false;
   elements.rerunExecutionName.focus();
@@ -502,7 +505,9 @@ function renderExecutionDetail(detail) {
   updateSelectedResultCount();
   renderAddCaseChecklist();
 
-  elements.selectedExecutionLabel.textContent = execution.name;
+  elements.selectedExecutionLabel.textContent = execution.version
+    ? `${execution.name} / ${execution.version}`
+    : execution.name;
   if (elements.deleteExecutionButton) {
     elements.deleteExecutionButton.hidden = false;
   }
@@ -813,6 +818,7 @@ if (elements.executionForm) {
         method: "POST",
         body: JSON.stringify({
           name: document.querySelector("#executionName").value,
+          version: document.querySelector("#executionVersion").value,
           description: document.querySelector("#executionDescription").value,
           test_case_ids: selectedCaseIds,
         }),
@@ -913,6 +919,7 @@ if (elements.rerunExecutionForm) {
           method: "POST",
           body: JSON.stringify({
             name: elements.rerunExecutionName.value,
+            version: elements.rerunExecutionVersion?.value || "",
             description: elements.rerunExecutionDescription.value,
           }),
         }

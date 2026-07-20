@@ -11,7 +11,11 @@ def test_rerun_creates_new_execution_with_not_run_results(sqlite_api_modules):
     case_a = create_case(test_cases, "TC-RERUN-001", "First case")
     case_b = create_case(test_cases, "TC-RERUN-002", "Second case")
     source = executions.create_execution(
-        ExecutionCreate(name="Regression Round 1", test_case_ids=[case_a["id"], case_b["id"]])
+        ExecutionCreate(
+            name="Regression Round 1",
+            version="1.0.0",
+            test_case_ids=[case_a["id"], case_b["id"]],
+        )
     )
     source_detail = executions.get_execution_detail(source["id"])
     executions.update_execution_item(
@@ -23,12 +27,14 @@ def test_rerun_creates_new_execution_with_not_run_results(sqlite_api_modules):
         source["id"],
         ExecutionRerunCreate(
             name="Regression Round 2",
+            version="1.0.1",
             description="Second pass after fixes",
         ),
     )
     rerun_detail = executions.get_execution_detail(rerun["id"])
 
     assert rerun["name"] == "Regression Round 2"
+    assert rerun["version"] == "1.0.1"
     assert rerun["description"] == "Second pass after fixes"
     assert rerun["added_count"] == 2
     assert rerun["skipped_retired_count"] == 0
